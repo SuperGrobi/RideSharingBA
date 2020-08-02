@@ -6,7 +6,7 @@ using StatsBase
 
 pyplot()
 
-config = Dict(
+base_config = Dict(
 # player parameters
 :b_i => 10,  # positive constant
 :α => 0.1,  # price factor
@@ -25,13 +25,6 @@ config = Dict(
 :games => 1000,  # games played for each direction
 :steps => 100
 )
-
-ϕ_res = 150
-ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
-
-p_0 = (zeros(ϕ_res) .+ 0.1)
-p_0 .-= cos.(10 * ϕ) * 0.03
-#p_0[80:90] .+= 0.1
 
 
 function u_share(ϕ_i, ϕ, conf)
@@ -201,6 +194,12 @@ function replicator_step(p_share, ϕ::LinRange, conf)
     return p_new
 end
 
+function dpdt(p, ϕ, conf)
+    # dgl to solve with different solvers
+    return conf[:dt] * p .* (1 .- p) .* Δu_array(ϕ, p, conf)
+end
+
+
 function develop_p(p_0, ϕ, conf)
     p_t0 = copy(p_0)
     for i in 1:conf[:steps]
@@ -211,16 +210,26 @@ function develop_p(p_0, ϕ, conf)
     return p_t0
 end
 
-ax = plot(ϕ, p_0)
-config[:steps] = 150
-p_end = develop_p(p_0, ϕ, config)
-plot!(ax, ϕ, p_end)
+
+if abspath(PROGRAM_FILE) == @__FILE__
+
+    ϕ_res = 150
+    ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
+
+    p_0 = (zeros(ϕ_res) .+ 0.1)
+    p_0 .-= cos.(10 * ϕ) * 0.03
+    #p_0[80:90] .+= 0.1
+
+    ax = plot(ϕ, p_0)
+    p_end = develop_p(p_0, ϕ, config)
+    plot!(ax, ϕ, p_end)
 
 
-#Δu_array = [Δu(α, β, γ, ϵ, p, r_c, ϕ, p_0, ϕ_i) for ϕ_i in ϕ]
-ylabel!(ax, "π_share")
-xlabel!(ax, "Angle ϕ")
-title!(ax, "Probability of sharing, numeric, $(config[:player_count]) players
-\ncutoff angle: $(config[:angle_cutoff])")
+    #Δu_array = [Δu(α, β, γ, ϵ, p, r_c, ϕ, p_0, ϕ_i) for ϕ_i in ϕ]
+    ylabel!(ax, "π_share")
+    xlabel!(ax, "Angle ϕ")
+    title!(ax, "Probability of sharing, numeric, $(config[:player_count]) players
+    \ncutoff angle: $(config[:angle_cutoff])")
 
-display(ax)
+    display(ax)
+end
