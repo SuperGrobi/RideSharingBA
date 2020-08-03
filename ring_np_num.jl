@@ -6,46 +6,88 @@ using StatsBase
 
 pyplot()
 
-base_config = Dict(
-# player parameters
-:b_i => 10,  # positive constant
-:α => 0.1,  # price factor
-:β => 0.9,  # detour factor
-:γ => 0.1,  # inconvenience factor
+struct Config
+    # player parameters
+    b_i::Float64  # positive constant
+    α::Float64  # price factor
+    β::Float64  # detour factor
+    γ::Float64  # inconvenience factor
 
-# system parameters
-:ϵ => 0.3,  # discount when sharing
-:p => 5,  # base price per distance
-:r_0 => 1,  # radius of ring
-:angle_cutoff => 1,  # angle (rad) above which people are no longer getting matched
-:player_count => 4,  # number of players
+    # system parameters
+    ϵ::Float64  # discount when sharing
+    p::Float64  # base price per distance
+    r_0::Float64  # radius of ring
+    angle_cutoff::Float64  # angle (rad) above which people are no longer getting matched
+    player_count::Int  # number of players
 
-# simulation parameters
-:dt => 2,  # timestep
-:games => 1000,  # games played for each direction
-:steps => 100
-)
+    # simulation parameters
+    dt::Float64  # timestep
+    games::Int  # games played for each direction
+    steps::Int  # integration steps
+end
+
+struct Config_small
+    # contains rescaled simulation parameters
+    #TODO finish struct, rework functions, add new functions
+    # player parameters
+    a::Float64  # positive constant with financial disincentive
+    b::Float64  # constant with discount incentive
+    c::Float64  # detour factor
+
+    # system parameters
+    angle_cutoff::Float64  # angle (rad) above which people are no longer getting matched
+    player_count::Int  # number of players
+
+    # simulation parameters
+    dt::Float64  # timestep
+    games::Int  # games played for each direction
+    steps::Int  # integration steps
+end
 
 
-function u_share(ϕ_i, ϕ, conf)
+function u_share(ϕ_i, ϕ, conf::Config)
     #= calculates utility if user is shared at position ϕ_i with user at position ϕ =#
-    f1 = conf[:b_i] - conf[:α] * (1-conf[:ϵ]) * conf[:p] * conf[:r_0] - conf[:γ] * conf[:r_0]
+    f1 = conf.b_i - conf.α * (1-conf.ϵ) * conf.p * conf.r_0 - conf.γ * conf.r_0
     if rand([true, false])
-        return f1 - conf[:β] * conf[:r_0] * sqrt(2 - 2cos(ϕ-ϕ_i))
+        return f1 - conf.β * conf.r_0 * sqrt(2 - 2cos(ϕ-ϕ_i))
     else
         return f1
     end
 end
 
-function u_share_single(conf)
-    #= calculates the utility if user wants to share but does not get matched =#
-    return conf[:b_i] - conf[:α] * (1-conf[:ϵ]) * conf[:p] * conf[:r_0]
+
+function u_share(ϕ_i, ϕ, conf::Config_small)
+    #= calculates utility if user is shared at position ϕ_i with user at position ϕ =#
+    f1 = conf.a + conf.b - 1
+    if rand([true, false])
+        return f1 - conf.c * sqrt(2 - 2cos(ϕ-ϕ_i))
+    else
+        return f1
+    end
 end
 
-function u_single(conf)
-    #= calculates the utility if user does not want to share =#
-    return conf[:b_i] - conf[:α] * conf[:p] * conf[:r_0]
+
+function u_share_single(conf::Config)
+    #= calculates the utility if user wants to share but does not get matched =#
+    return conf.b_i - conf.α * (1-conf.ϵ) * conf.p * conf.r_0
 end
+
+function u_share_single(conf::Config_small)
+    #= calculates the utility if user wants to share but does not get matched =#
+    return conf.a + conf.b
+end
+
+
+function u_single(conf::Config)
+    #= calculates the utility if user does not want to share =#
+    return conf.b_i - conf.α * conf.p * conf.r_0
+end
+
+function u_single(conf::Config_small)
+    #= calculates the utility if user does not want to share =#
+    return conf.a
+end
+
 
 function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
     # ϕ_i: meine richtung (index)
@@ -158,14 +200,14 @@ end
 
 function Δu(my_index, ϕ, p_share, conf)
     # calculates the difference in utility between sharing and single rides by playing multiple games
-    realisations_phi_index = sample(1:length(ϕ), (conf[:player_count]-1, conf[:games]))
+    realisations_phi_index = sample(1:length(ϕ), (conf.player_count-1, conf.games))
     realisations_share = [sample([false,true], Weights([1-p_share[i], p_share[i]])) for i in realisations_phi_index]
 
     # fill util_share for each realisation
-    util_share = zeros(conf[:games])
+    util_share = zeros(conf.games)
     for (i, ϕ_ind) in enumerate(eachcol(realisations_phi_index))
         share = realisations_share[:, i]
-        share_config = get_share_config(my_index, ϕ_ind, ϕ, share; max_share_angle=conf[:angle_cutoff])  # get angle index of sharing partner
+        share_config = get_share_config(my_index, ϕ_ind, ϕ, share; max_share_angle=conf.angle_cutoff)  # get angle index of sharing partner
         if share_config == 0  # if no one shares with me
             util_share[i] = u_share_single(conf)
         else
@@ -186,7 +228,7 @@ end
 
 
 function replicator_step(p_share, ϕ::LinRange, conf)
-    p_new = p_share + conf[:dt] * p_share .* (1 .- p_share) .* Δu_array(ϕ, p_share, conf)
+    p_new = p_share + conf.dt * p_share .* (1 .- p_share) .* Δu_array(ϕ, p_share, conf)
     #p_new = zeros(length(p_share))
     #for i in 1:length(p_share)
     #    p_new[i] = p_share[i] + conf[:dt] * p_share[i]*(1-p_share[i]) * Δu(i, ϕ, p_share, games, players, r_0, b, α, ϵ, p, β, γ, angle_cutoff)
@@ -194,15 +236,22 @@ function replicator_step(p_share, ϕ::LinRange, conf)
     return p_new
 end
 
-function dpdt(p, ϕ, conf)
+function dpdt!(dp, p, param, t)
     # dgl to solve with different solvers
-    return conf[:dt] * p .* (1 .- p) .* Δu_array(ϕ, p, conf)
+    dp .= p .* (1 .- p) .* Δu_array(param[1], p, param[2])
+end
+
+
+function dpdt_iter!(dp, p, param, t)
+    for (i, p_i) in enumerate(p)
+        dp[i] = p[i] * (1 - p[i]) * Δu(i, param[1], p, param[2])
+    end
 end
 
 
 function develop_p(p_0, ϕ, conf)
     p_t0 = copy(p_0)
-    for i in 1:conf[:steps]
+    for i in 1:conf.steps
         p_t1 = replicator_step(p_t0, ϕ, conf)
         p_t0 = p_t1
         println("step $i finished.")
@@ -210,26 +259,54 @@ function develop_p(p_0, ϕ, conf)
     return p_t0
 end
 
+function solve_time_evolution(p_0, ϕ, conf)
+    save_array = zeros(length(ϕ), conf.steps+1)
+    save_array[:,1] .= p_0
+    for i in 2:conf.steps+1
+        save_array[:,i] .= replicator_step(save_array[:, i-1], ϕ, conf)
+        println("step $i saved")
+    end
+    return save_array
 
-if abspath(PROGRAM_FILE) == @__FILE__
+if true #abspath(PROGRAM_FILE) == @__FILE__
 
     ϕ_res = 150
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
 
     p_0 = (zeros(ϕ_res) .+ 0.1)
-    p_0 .-= cos.(10 * ϕ) * 0.03
+    p_0 .-= cos.(1 * ϕ) * 0.03
     #p_0[80:90] .+= 0.1
+    base_config = Dict(
+        # player parameters
+        :b_i => 10,  # positive constant
+        :α => 0.1,  # price factor
+        :β => 0.9,  # detour factor
+        :γ => 0.1,  # inconvenience factor
 
+        # system parameters
+        :ϵ => 0.3,  # discount when sharing
+        :p => 5,  # base price per distance
+        :r_0 => 1,  # radius of ring
+        :angle_cutoff => 1,  # angle (rad) above which people are no longer getting matched
+        :player_count => 4,  # number of players
+
+        # simulation parameters
+        :dt => 2,  # timestep
+        :games => 1000,  # games played for each direction
+        :steps => 100
+    )
+    config = Config(10, 0.1, 0.9, 0.1, 0.3, 5, 1, 1, 4, 2, 1000, 100)
+    config_small = Config_small(10, 1, 3, 1, 4, 2, 1000, 100)
     ax = plot(ϕ, p_0)
-    p_end = develop_p(p_0, ϕ, config)
+    p_end = develop_p(p_0, ϕ, config_small)
     plot!(ax, ϕ, p_end)
 
 
     #Δu_array = [Δu(α, β, γ, ϵ, p, r_c, ϕ, p_0, ϕ_i) for ϕ_i in ϕ]
     ylabel!(ax, "π_share")
     xlabel!(ax, "Angle ϕ")
-    title!(ax, "Probability of sharing, numeric, $(config[:player_count]) players
-    \ncutoff angle: $(config[:angle_cutoff])")
+    title!(ax, "Probability of sharing, numeric, $(config.player_count) players
+    \ncutoff angle: $(config.angle_cutoff)")
 
     display(ax)
 end
