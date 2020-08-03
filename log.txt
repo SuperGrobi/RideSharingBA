@@ -3,4 +3,5 @@
 - reworked code to take config objects, one with standard parameters, one with
 combined parameter set
 - started questions.txt to save questions that emerge on the way
-- begin to use an ode solver for time evolution
+- begin to use an ode solver for time evolution (does not converge or complete)
+- plots does no longer compile
