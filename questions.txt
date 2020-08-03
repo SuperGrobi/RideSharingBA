@@ -1,0 +1,5 @@
+- how does the amount of peaks depend on: cutoff angle, player count, discount, detour scale
+- how does the width of peaks depend on: cutoff angle, player count, discount, detour scale
+
+- how does the time evolution of a starting probability look like? (make nice plots...)
+- 
