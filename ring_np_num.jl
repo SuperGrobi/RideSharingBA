@@ -66,6 +66,22 @@ struct Config_small
 end
 
 
+function print(x::Config_small)
+    println("a: $(x.a)")
+    println("b: $(x.b)")
+    println("c: $(x.c)")
+    println("γ: $(x.γ)")
+    println("system params:")
+    println("angle_cutoff: $(x.angle_cutoff)")
+    println("player_count: $(x.player_count)")
+    println("sim params:")
+    println("dt: $(x.dt)")
+    println("games: $(x.games)")
+    println("steps: $(x.steps)")
+
+end
+
+
 function u_share(ϕ_i, ϕ, conf::Config)
     #= calculates utility if user is shared at position ϕ_i with user at position ϕ =#
     f1 = conf.b_i - conf.α * (1-conf.ϵ) * conf.p * conf.r_0 - conf.γ * conf.r_0
@@ -303,19 +319,21 @@ function solve_time_evolution(p_0, ϕ, conf)
     save_array = zeros(length(ϕ), conf.steps+1)
     save_array[:,1] .= p_0
     actual_dist_array = zeros(length(ϕ), conf.steps+1)
+    print("step 1 of $(conf.steps+1) done.\r")
     for i in 2:conf.steps+1
         result = replicator_step(save_array[:, i-1], ϕ, conf)
         save_array[:,i] .= result[1]
         actual_dist_array[:,i] .= result[2]
-        print("step $i saved\r")
+        print("step $(i-1) of $(conf.steps) done.\r")
     end
+    println("Simulation completed!")
     return save_array, actual_dist_array
 end
 
 
-function save(p_end, config::Config)
+function save_sim(p_end, config::Config; folder)
     result = [p_end; config]
-    save_string = "alpha=$(config.α)_beta=$(config.β)_gamma=$(config.γ)
+    save_string = folder * "alpha=$(config.α)_beta=$(config.β)_gamma=$(config.γ)
     _epsilon=$(config.ϵ)_p=$(config.p)_r0=$(config.r_0)
     _angCut=$(config.angle_cutoff)_Pc=$(config.player_count)
     _dt=$(config.dt)_games=$(config.games)_steps=$(config.steps).jld2"
@@ -323,61 +341,67 @@ function save(p_end, config::Config)
 end
 
 
-function save_sim(p_end, config::Config_small)
+function save_sim(p_end, config::Config_small, folder)
     result = [p_end; config]
-    save_string = "a=$(config.a)_b=$(config.b)_c=$(config.c)
+    save_string = folder * "a=$(config.a)_b=$(config.b)_c=$(config.c)
     _angCut=$(config.angle_cutoff)_Pc=$(config.player_count)
     _dt=$(config.dt)_games=$(config.games)_steps=$(config.steps).jld2"
     @save save_string result
 end
 
 
-function load_sim(source)
-    @load source
-    return result
+function load_sim(source::String)
+    f = jldopen(source, "r")
+    return f["result"]
 end
 
 
-function run_multi_sims(configs, ϕ_res, p_fac::float)
+function run_multi_sims(configs, ϕ_res, p_fac::Number, folder)
+    # runs multiple simulations wit random initial conditions
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
-    for conf in configs
+    for (i,conf) in enumerate(configs)
+        println("==========================================")
+        println("simulating $i out of $(length(configs)) ")
+        println("now simulating the system:")
+        print(conf)
+        println("==========================================")
         p_0 = (zeros(ϕ_res) .* p_fac)
-        p_end = solve_time_evolution(p_0, ϕ, conf)
+        p_end = solve_time_evolution(p_0, ϕ, conf, folder)
+        println("==========================================")
         save_sim(p_end, conf)
+        println("saved!")
+        println("==========================================")
+
+    end
+end
+
+function run_multi_sims(configs, ϕ_res, p_0::Array, folder)
+    # runs multiple simulations with given start function
+    ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
+    for (i,conf) in enumerate(configs)
+        println("==========================================")
+        println("simulating $i out of $(length(configs)) ")
+        println("now simulating the system:")
+        print(conf)
+        println("==========================================")
+        p_end = solve_time_evolution(p_0, ϕ, conf, folder)
+        println("==========================================")
+        save_sim(p_end, conf)
+        println("saved!")
+        println("==========================================")
+
     end
 end
 
 
-if false
-    ϕ_res = 200
-    ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
-
-    p_0 = (ones(ϕ_res) .- 0.1)
-    p_0 .-= cos.(1 * ϕ) * 0.03
-
-    config = Config(10, 0.1, 1.5, 0.1, 0.3, 5, 1, π, 100, 2, 1000, 100)
-
-    config_small = Config_small(10, 1, 3, π, 4, 5, 1000, 10)
-    #ax = plot(ϕ, p_0)
-    p_end = solve_time_evolution(p_0, ϕ, config)
-
+function plot_result(result)
+    p_end = result[1]
+    config = result[2]
     l = @layout [a; b; c]
     p1 = heatmap(p_end[1], title="share request probability pc=$(config.player_count)")
     p2 = heatmap(p_end[2], title="fraction of realised shared rides")
-    p3 = plot(ϕ, p_0)
-    plot!(p3, ϕ, p_end[1][:,end], title="end distribution")
+    p3 = plot(ϕ, p_end[1][:,1], label="start sharing probability")
+    plot!(p3, ϕ, p_end[1][:,end], label="share request probability")
+    plot!(p3, ϕ, p_end[2][:,end], label="match probability", title = "end distributions")
     plot(p1,p2,p3, layout=l)
-
-
-    #plot!(ax, ϕ, p_end[:,end])
-
-
-    #Δu_array = [Δu(α, β, γ, ϵ, p, r_c, ϕ, p_0, ϕ_i) for ϕ_i in ϕ]
-
-    #ylabel!(ax, "π_share")
-    #xlabel!(ax, "Angle ϕ")
-    #title!(ax, "Probability of sharing, numeric, $(config.player_count) players
-    #\ncutoff angle: $(config.angle_cutoff)")
-
-    #display(ax)
 end
