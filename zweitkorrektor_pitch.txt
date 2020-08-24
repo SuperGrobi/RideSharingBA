@@ -1,0 +1,6 @@
+In der Bachelorarbeit beschäftige ich mich mit der Qualitativen Dynamik eines
+Ride-Sharing Systems das spontane Symetriebrechung und Pattern-Formation
+zeigt.
+Methodisch möchte ich das System analytisch beschrieben und mit steigender Komplexität
+numerisch simulieren. Hierbei ist unter anderem die Stabilität des Systems
+sowie das Skalierungsverhalten der entstehenden Muster von interesse.
