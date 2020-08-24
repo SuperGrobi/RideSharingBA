@@ -3,10 +3,11 @@ using NumericalIntegration
 using Plots
 using Random
 using StatsBase
+using JLD2
 
 pyplot()
 
-struct Config
+mutable struct Config
     # player parameters
     b_i::Float64  # positive constant
     α::Float64  # price factor
@@ -24,6 +25,26 @@ struct Config
     dt::Float64  # timestep
     games::Int  # games played for each direction
     steps::Int  # integration steps
+end
+
+import Base.print
+function print(x::Config)
+    println("b_i: $(x.b_i)")
+    println("α: $(x.α)")
+    println("β: $(x.β)")
+    println("γ: $(x.γ)")
+
+    println("system params:")
+    println("ϵ: $(x.ϵ)")
+    println("p: $(x.p)")
+    println("r_0: $(x.r_0)")
+    println("angle_cutoff: $(x.angle_cutoff)")
+    println("player_count: $(x.player_count)")
+    println("sim params:")
+    println("dt: $(x.dt)")
+    println("games: $(x.games)")
+    println("steps: $(x.steps)")
+
 end
 
 struct Config_small
@@ -113,6 +134,7 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
     #println(all_players_ind)
     #println(sorted_index)
     #println(sorted_position)
+
 
     if true ∉ share  # wenn niemand sonst sharen will
         return 0
@@ -204,6 +226,7 @@ function Δu(my_index, ϕ, p_share, conf)
     realisations_share = [sample([false,true], Weights([1-p_share[i], p_share[i]])) for i in realisations_phi_index]
 
     # fill util_share for each realisation
+    actually_shared = 0
     util_share = zeros(conf.games)
     for (i, ϕ_ind) in enumerate(eachcol(realisations_phi_index))
         share = realisations_share[:, i]
@@ -212,28 +235,42 @@ function Δu(my_index, ϕ, p_share, conf)
             util_share[i] = u_share_single(conf)
         else
             util_share[i] = u_share(ϕ[my_index], ϕ[share_config], conf)
+            actually_shared += 1
         end
     end
 
     util_share = mean(util_share)
     util_single = u_single(conf)
 
-    return util_share - util_single
+    return util_share - util_single, actually_shared/conf.games
 end
 
 function Δu_array(ϕ, p_share, conf)
-    Δu_values = [Δu(i, ϕ, p_share, conf) for i in 1:length(ϕ)]
+    Δu_values = zeros(length(ϕ))
+    shared = zeros(length(ϕ))
+    for i in 1:length(ϕ)
+        result = Δu(i, ϕ, p_share, conf)
+        Δu_values[i] = result[1]
+        shared[i] = result[2]
+    end
+    return Δu_values, shared
+
 end
 
 
 
 function replicator_step(p_share, ϕ::LinRange, conf)
-    p_new = p_share + conf.dt * p_share .* (1 .- p_share) .* Δu_array(ϕ, p_share, conf)
+    result = Δu_array(ϕ, p_share, conf)
+    p_new = p_share + conf.dt * p_share .* (1 .- p_share) .* result[1]
+    larger = p_new .> 1
+    smaller = p_new .< 0
+    p_new[larger] .= 1 .- rand(length(larger))[larger]*0.01
+    p_new[smaller] .= rand(length(smaller))[smaller]*0.01
     #p_new = zeros(length(p_share))
     #for i in 1:length(p_share)
     #    p_new[i] = p_share[i] + conf[:dt] * p_share[i]*(1-p_share[i]) * Δu(i, ϕ, p_share, games, players, r_0, b, α, ϵ, p, β, γ, angle_cutoff)
     #end
-    return p_new
+    return p_new, result[2]
 end
 
 function dpdt!(dp, p, param, t)
@@ -251,62 +288,96 @@ end
 
 function develop_p(p_0, ϕ, conf)
     p_t0 = copy(p_0)
+    actual_dist = zeros(length(p_0))
     for i in 1:conf.steps
-        p_t1 = replicator_step(p_t0, ϕ, conf)
+        result = replicator_step(p_t0, ϕ, conf)
+        p_t1 = result[1]
         p_t0 = p_t1
-        println("step $i finished.")
+        actual_dist = result[2]
+        print("step $i finished.\r")
     end
-    return p_t0
+    return p_t0, actual_dist
 end
 
 function solve_time_evolution(p_0, ϕ, conf)
     save_array = zeros(length(ϕ), conf.steps+1)
     save_array[:,1] .= p_0
+    actual_dist_array = zeros(length(ϕ), conf.steps+1)
     for i in 2:conf.steps+1
-        save_array[:,i] .= replicator_step(save_array[:, i-1], ϕ, conf)
-        println("step $i saved")
+        result = replicator_step(save_array[:, i-1], ϕ, conf)
+        save_array[:,i] .= result[1]
+        actual_dist_array[:,i] .= result[2]
+        print("step $i saved\r")
     end
-    return save_array
+    return save_array, actual_dist_array
+end
 
-if true #abspath(PROGRAM_FILE) == @__FILE__
 
-    ϕ_res = 150
+function save(p_end, config::Config)
+    result = [p_end; config]
+    save_string = "alpha=$(config.α)_beta=$(config.β)_gamma=$(config.γ)
+    _epsilon=$(config.ϵ)_p=$(config.p)_r0=$(config.r_0)
+    _angCut=$(config.angle_cutoff)_Pc=$(config.player_count)
+    _dt=$(config.dt)_games=$(config.games)_steps=$(config.steps).jld2"
+    @save save_string result
+end
+
+
+function save_sim(p_end, config::Config_small)
+    result = [p_end; config]
+    save_string = "a=$(config.a)_b=$(config.b)_c=$(config.c)
+    _angCut=$(config.angle_cutoff)_Pc=$(config.player_count)
+    _dt=$(config.dt)_games=$(config.games)_steps=$(config.steps).jld2"
+    @save save_string result
+end
+
+
+function load_sim(source)
+    @load source
+    return result
+end
+
+
+function run_multi_sims(configs, ϕ_res, p_fac::float)
+    ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
+    for conf in configs
+        p_0 = (zeros(ϕ_res) .* p_fac)
+        p_end = solve_time_evolution(p_0, ϕ, conf)
+        save_sim(p_end, conf)
+    end
+end
+
+
+if false
+    ϕ_res = 200
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
 
-    p_0 = (zeros(ϕ_res) .+ 0.1)
+    p_0 = (ones(ϕ_res) .- 0.1)
     p_0 .-= cos.(1 * ϕ) * 0.03
-    #p_0[80:90] .+= 0.1
-    base_config = Dict(
-        # player parameters
-        :b_i => 10,  # positive constant
-        :α => 0.1,  # price factor
-        :β => 0.9,  # detour factor
-        :γ => 0.1,  # inconvenience factor
 
-        # system parameters
-        :ϵ => 0.3,  # discount when sharing
-        :p => 5,  # base price per distance
-        :r_0 => 1,  # radius of ring
-        :angle_cutoff => 1,  # angle (rad) above which people are no longer getting matched
-        :player_count => 4,  # number of players
+    config = Config(10, 0.1, 1.5, 0.1, 0.3, 5, 1, π, 100, 2, 1000, 100)
 
-        # simulation parameters
-        :dt => 2,  # timestep
-        :games => 1000,  # games played for each direction
-        :steps => 100
-    )
-    config = Config(10, 0.1, 0.9, 0.1, 0.3, 5, 1, 1, 4, 2, 1000, 100)
-    config_small = Config_small(10, 1, 3, 1, 4, 2, 1000, 100)
-    ax = plot(ϕ, p_0)
-    p_end = develop_p(p_0, ϕ, config_small)
-    plot!(ax, ϕ, p_end)
+    config_small = Config_small(10, 1, 3, π, 4, 5, 1000, 10)
+    #ax = plot(ϕ, p_0)
+    p_end = solve_time_evolution(p_0, ϕ, config)
+
+    l = @layout [a; b; c]
+    p1 = heatmap(p_end[1], title="share request probability pc=$(config.player_count)")
+    p2 = heatmap(p_end[2], title="fraction of realised shared rides")
+    p3 = plot(ϕ, p_0)
+    plot!(p3, ϕ, p_end[1][:,end], title="end distribution")
+    plot(p1,p2,p3, layout=l)
+
+
+    #plot!(ax, ϕ, p_end[:,end])
 
 
     #Δu_array = [Δu(α, β, γ, ϵ, p, r_c, ϕ, p_0, ϕ_i) for ϕ_i in ϕ]
-    ylabel!(ax, "π_share")
-    xlabel!(ax, "Angle ϕ")
-    title!(ax, "Probability of sharing, numeric, $(config.player_count) players
-    \ncutoff angle: $(config.angle_cutoff)")
 
-    display(ax)
+    #ylabel!(ax, "π_share")
+    #xlabel!(ax, "Angle ϕ")
+    #title!(ax, "Probability of sharing, numeric, $(config.player_count) players
+    #\ncutoff angle: $(config.angle_cutoff)")
+
+    #display(ax)
 end
