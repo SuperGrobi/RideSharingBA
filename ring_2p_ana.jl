@@ -40,13 +40,14 @@ end
 
 function developement_plot(ax, p_0, ϕ, α, β, γ, ϵ, p, r_c, dt)
     p_t0 = copy(p_0)
-    for i in 1:1000
+    for i in 1:10000
         p_t1 = replicator_step(p_t0, ϕ, α, β, γ, ϵ, p, r_c, dt)
         p_t0 = p_t1
-        if i%100==0
-            plot!(ax, ϕ, p_t1)
+        if i%1000==0
+            plot!(ax, ϕ, p_t1, label="t=$(dt*i)")
         end
     end
+    return ax
 end
 
 function get_λ_from_p(p_0, p_t, ϕ, δ, k, t)
@@ -55,7 +56,22 @@ function get_λ_from_p(p_0, p_t, ϕ, δ, k, t)
     a = log.(a.+1)
     return a/t
 end
+b_i::Float64  # positive constant
+α::Float64  # price factor
+β::Float64  # detour factor
+γ::Float64  # inconvenience factor
 
+# system parameters
+ϵ::Float64  # discount when sharing
+p::Float64  # base price per distance
+r_0::Float64  # radius of ring
+angle_cutoff::Float64  # angle (rad) above which people are no longer getting matched
+player_count::Int  # number of players
+
+# simulation parameters
+dt::Float64  # timestep
+games::Int  # games played for each direction
+steps::Int  # integration steps
 
 α = 0.2
 β = 0.6
@@ -72,17 +88,19 @@ dt = 1
 fp = α*ϵ*p / (γ+2*β/π)
 
 δ = 0.01
-
+p_0 = (fp .+ sin.(1 * ϕ) * δ)
 
 λ = zeros(11)
 for k in 0:10
-    p_0 = (fp .+ cos.(k * ϕ) * δ)
-    p_1 = replicator_step(p_0, ϕ, α, β, γ, ϵ, p, r_c, dt)
-    λ[k+1] = mean(get_λ_from_p(p_0, p_1, ϕ, δ, k, dt))
+    p_2 = (fp .+ cos.(k * ϕ) * δ)
+    p_1 = replicator_step(p_2, ϕ, α, β, γ, ϵ, p, r_c, dt)
+    λ[k+1] = mean(get_λ_from_p(p_2, p_1, ϕ, δ, k, dt))
 end
 
 
 #Δu_array = [Δu(α, β, γ, ϵ, p, r_c, ϕ, p_0, ϕ_i) for ϕ_i in ϕ]
+ax = plot(ϕ, p_0)
+ax = developement_plot(ax, p_0, ϕ, α, β, γ, ϵ, p, r_c, dt)
 ylabel!(ax, "π_share")
 xlabel!(ax, "Angle ϕ")
 title!(ax, "Probability of sharing, 2 players, analytical")
