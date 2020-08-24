@@ -1,5 +1,8 @@
 - how does the amount of peaks depend on: cutoff angle, player count, discount, detour scale
 - how does the width of peaks depend on: cutoff angle, player count, discount, detour scale
+- how many requested shared rides are actually shared
+
+- many players, high start value: does this occur without cutoff?
 
 - how does the time evolution of a starting probability look like? (make nice plots...)
-- 
+- how can I rescale the utility to identify independent variables
