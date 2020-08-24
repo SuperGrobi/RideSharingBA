@@ -331,21 +331,16 @@ function solve_time_evolution(p_0, ϕ, conf)
 end
 
 
-function save_sim(p_end, config::Config; folder)
+function save_sim(p_end, config::Config, folder)
     result = [p_end; config]
-    save_string = folder * "alpha=$(config.α)_beta=$(config.β)_gamma=$(config.γ)
-    _epsilon=$(config.ϵ)_p=$(config.p)_r0=$(config.r_0)
-    _angCut=$(config.angle_cutoff)_Pc=$(config.player_count)
-    _dt=$(config.dt)_games=$(config.games)_steps=$(config.steps).jld2"
+    save_string = folder * "alpha=$(config.α)_beta=$(config.β)_gamma=$(config.γ)_epsilon=$(config.ϵ)_p=$(config.p)_r0=$(config.r_0)_angCut=$(config.angle_cutoff)_Pc=$(config.player_count)_dt=$(config.dt)_games=$(config.games)_steps=$(config.steps).jld2"
     @save save_string result
 end
 
 
 function save_sim(p_end, config::Config_small, folder)
     result = [p_end; config]
-    save_string = folder * "a=$(config.a)_b=$(config.b)_c=$(config.c)
-    _angCut=$(config.angle_cutoff)_Pc=$(config.player_count)
-    _dt=$(config.dt)_games=$(config.games)_steps=$(config.steps).jld2"
+    save_string = folder * "a=$(config.a)_b=$(config.b)_c=$(config.c)_angCut=$(config.angle_cutoff)_Pc=$(config.player_count)_dt=$(config.dt)_games=$(config.games)_steps=$(config.steps).jld2"
     @save save_string result
 end
 
