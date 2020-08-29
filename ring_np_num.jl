@@ -51,9 +51,9 @@ struct Config_small
     # contains rescaled simulation parameters
     #TODO finish struct, rework functions, add new functions
     # player parameters
-    a::Float64  # positive constant with financial disincentive
-    b::Float64  # constant with discount incentive
-    c::Float64  # detour factor
+    a::Float64  # positive constant with financial incentives
+    b::Float64  # detour disincentive
+    c::Float64  # constant for inconvenience
 
     # system parameters
     angle_cutoff::Float64  # angle (rad) above which people are no longer getting matched
@@ -70,7 +70,6 @@ function print(x::Config_small)
     println("a: $(x.a)")
     println("b: $(x.b)")
     println("c: $(x.c)")
-    println("γ: $(x.γ)")
     println("system params:")
     println("angle_cutoff: $(x.angle_cutoff)")
     println("player_count: $(x.player_count)")
@@ -93,25 +92,9 @@ function u_share(ϕ_i, ϕ, conf::Config)
 end
 
 
-function u_share(ϕ_i, ϕ, conf::Config_small)
-    #= calculates utility if user is shared at position ϕ_i with user at position ϕ =#
-    f1 = conf.a + conf.b - 1
-    if rand([true, false])
-        return f1 - conf.c * sqrt(2 - 2cos(ϕ-ϕ_i))
-    else
-        return f1
-    end
-end
-
-
 function u_share_single(conf::Config)
     #= calculates the utility if user wants to share but does not get matched =#
     return conf.b_i - conf.α * (1-conf.ϵ) * conf.p * conf.r_0
-end
-
-function u_share_single(conf::Config_small)
-    #= calculates the utility if user wants to share but does not get matched =#
-    return conf.a + conf.b
 end
 
 
@@ -120,8 +103,20 @@ function u_single(conf::Config)
     return conf.b_i - conf.α * conf.p * conf.r_0
 end
 
-function u_single(conf::Config_small)
-    #= calculates the utility if user does not want to share =#
+
+function u_share(ϕ_i, ϕ, conf::Config_small)
+    #= calculates the difference in utility if user is shared at position ϕ_i with user at position ϕ =#
+    f1 = conf.a - conf.c
+    if rand([true, false])
+        return f1 - conf.b * sqrt(2 - 2cos(ϕ-ϕ_i))
+    else
+        return f1
+    end
+end
+
+
+function u_share_single(conf::Config_small)
+    #= calculates the difference in utility if user wants to share but does not get matched =#
     return conf.a
 end
 
@@ -236,7 +231,7 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
 end
 
 
-function Δu(my_index, ϕ, p_share, conf)
+function Δu(my_index, ϕ, p_share, conf::Config)
     # calculates the difference in utility between sharing and single rides by playing multiple games
     realisations_phi_index = sample(1:length(ϕ), (conf.player_count-1, conf.games))
     realisations_share = [sample([false,true], Weights([1-p_share[i], p_share[i]])) for i in realisations_phi_index]
@@ -260,6 +255,32 @@ function Δu(my_index, ϕ, p_share, conf)
 
     return util_share - util_single, actually_shared/conf.games
 end
+
+
+function Δu(my_index, ϕ, p_share, conf::Config_small)
+    # calculates the difference in utility between sharing and single rides by playing multiple games
+    realisations_phi_index = sample(1:length(ϕ), (conf.player_count-1, conf.games))
+    realisations_share = [sample([false,true], Weights([1-p_share[i], p_share[i]])) for i in realisations_phi_index]
+
+    # fill util_share for each realisation
+    actually_shared = 0
+    Δutils = zeros(conf.games)
+    for (i, ϕ_ind) in enumerate(eachcol(realisations_phi_index))
+        share = realisations_share[:, i]
+        share_config = get_share_config(my_index, ϕ_ind, ϕ, share; max_share_angle=conf.angle_cutoff)  # get angle index of sharing partner
+        if share_config == 0  # if no one shares with me
+            Δutils[i] = u_share_single(conf)
+        else
+            Δutils[i] = u_share(ϕ[my_index], ϕ[share_config], conf)
+            actually_shared += 1
+        end
+    end
+
+    Δutils = mean(Δutils)
+
+    return Δutils, actually_shared/conf.games
+end
+
 
 function Δu_array(ϕ, p_share, conf)
     Δu_values = zeros(length(ϕ))
@@ -319,7 +340,7 @@ function solve_time_evolution(p_0, ϕ, conf)
     save_array = zeros(length(ϕ), conf.steps+1)
     save_array[:,1] .= p_0
     actual_dist_array = zeros(length(ϕ), conf.steps+1)
-    print("step 1 of $(conf.steps+1) done.\r")
+    print("step 1 of $(conf.steps) done.\r")
     for i in 2:conf.steps+1
         result = replicator_step(save_array[:, i-1], ϕ, conf)
         save_array[:,i] .= result[1]
@@ -361,9 +382,9 @@ function run_multi_sims(configs, ϕ_res, p_fac::Number, folder)
         print(conf)
         println("==========================================")
         p_0 = (zeros(ϕ_res) .* p_fac)
-        p_end = solve_time_evolution(p_0, ϕ, conf, folder)
+        p_end = solve_time_evolution(p_0, ϕ, conf)
         println("==========================================")
-        save_sim(p_end, conf)
+        save_sim(p_end, conf, folder)
         println("saved!")
         println("==========================================")
 
@@ -379,9 +400,9 @@ function run_multi_sims(configs, ϕ_res, p_0::Array, folder)
         println("now simulating the system:")
         print(conf)
         println("==========================================")
-        p_end = solve_time_evolution(p_0, ϕ, conf, folder)
+        p_end = solve_time_evolution(p_0, ϕ, conf)
         println("==========================================")
-        save_sim(p_end, conf)
+        save_sim(p_end, conf, folder)
         println("saved!")
         println("==========================================")
 
@@ -392,9 +413,18 @@ end
 function plot_result(result)
     p_end = result[1]
     config = result[2]
+    ϕ_res = size(p_end[1])[1]
+    ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
     l = @layout [a; b; c]
+
+    if typeof(config) == Config_small
+        params = "a=$(config.a), b=$(config.b)"
+    else
+        params = ""
+    end
+
     p1 = heatmap(p_end[1], title="share request probability pc=$(config.player_count)")
-    p2 = heatmap(p_end[2], title="fraction of realised shared rides")
+    p2 = heatmap(p_end[2], title="matching probability $params")
     p3 = plot(ϕ, p_end[1][:,1], label="start sharing probability")
     plot!(p3, ϕ, p_end[1][:,end], label="share request probability")
     plot!(p3, ϕ, p_end[2][:,end], label="match probability", title = "end distributions")
