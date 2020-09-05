@@ -108,7 +108,7 @@ function u_share(ϕ_i, ϕ, conf::Config_small)
     #= calculates the difference in utility if user is shared at position ϕ_i with user at position ϕ =#
     f1 = conf.a - conf.c
     if rand([true, false])
-        return f1 - conf.b * sqrt(2 - 2cos(ϕ-ϕ_i))
+        return f1 - sqrt(2) * conf.b * sqrt(1 - cos(ϕ-ϕ_i))
     else
         return f1
     end
