@@ -10,7 +10,7 @@ p_0 .-= cos.(1 * ϕ) * 0.03
 
 configs = []
 
-for c in 0:10:100
+for c in 0:0.2:2
     for b in 0:0.2:4
         push!(configs, Config_small(1, b, c, π, 2, 2, 1000, 100))
     end
