@@ -10,8 +10,8 @@ p_0 .-= cos.(1 * ϕ) * 0.03
 
 configs = []
 for n in [4, 8, 16]
-    for b in 1:0.05:4
-        push!(configs, Config_small(1, b, 0, π, n, 1, 1000, 100))
+    for b in 4.1:0.1:8
+        push!(configs, Config_small(1, b, 0, π, n, 2, 1000, 100))
     end
 end
 

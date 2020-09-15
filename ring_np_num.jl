@@ -120,6 +120,9 @@ function u_share_single(conf::Config_small)
     return conf.a
 end
 
+function cos_satz(Δϕ)
+    return sqrt(1-cos(Δϕ))
+end
 
 function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
     # ϕ_i: meine richtung (index)
@@ -168,23 +171,25 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
     # real calculations if trivial checks did not fail
     if (num_players) % 2 == 0  # wenn mit mir eine gerade Anzahl sharen
 
-        i1 = all_players_ind[sorted_index]
+        i1 = ϕ[all_players_ind[sorted_index]]
         i2 = circshift(i1, 1)
+
 
         # differenzen der beiden konfigurationen
         first_config = abs.(i1[2:2:end] .- i1[1:2:end])
         second_config = abs.(i2[2:2:end] .- i2[1:2:end])
 
+
         # aufräumen, für periodische Randbedingungen (ind 180 und ind 2 -> Distanz von 22, nicht 178)
-        first_config = [i>ring_res/2 ? ring_res-i : i for i in first_config]
-        second_config = [i>ring_res/2 ? ring_res-i : i for i in second_config]
+        first_config = [i>π ? 2π-i : i for i in first_config]
+        second_config = [i>π ? 2π-i : i for i in second_config]
 
         #println(first_config)
         #println(second_config)
 
         # summation über umwege
-        first_sum = sum(first_config)
-        second_sum = sum(second_config)
+        first_sum = sum(cos_satz.(first_config))
+        second_sum = sum(cos_satz.(second_config))
 
         #println(first_sum)
         #println(second_sum)
@@ -201,15 +206,16 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
     else  # wenn eine ungerade Anzahl (inklusive mir) sharen will
         distances = zeros(Int, num_players)
         sharing_index = zeros(Int, num_players)
+        ϕ_targets = ϕ[all_players_ind[sorted_index]]
 
         # alle shifts durchprobieren
         for shift in 0:(num_players-1)
-            sorted_targets = circshift(all_players_ind[sorted_index], shift)
+            sorted_targets = circshift(ϕ_targets, shift)
 
             # differenzen und aufräumen
             config = abs.(sorted_targets[2:2:end] .- sorted_targets[1:2:end-1])
-            config = [i>ring_res/2 ? ring_res-i : i for i in config]
-            distances[shift+1] = sum(config)
+            config = [i>π ? 2π-i : i for i in config]
+            distances[shift+1] = sum(cos_satz.(config))
 
             # decide on sharing partner
             if (sorted_position+shift) == num_players
