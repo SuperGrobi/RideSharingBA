@@ -23,6 +23,6 @@ for n in [16]
     end
 end
 
-pmap(c->multi_dev(c, ϕ, p_0, "more_players_high_prob/"), configs)
+@time pmap(c->multi_dev(c, ϕ, p_0, "test/"), configs)
 
 #run_multi_sims(configs[9:end], ϕ_res, p_0, "more_players_high_prob/")
