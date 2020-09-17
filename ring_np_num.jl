@@ -204,7 +204,7 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
         end
 
     else  # wenn eine ungerade Anzahl (inklusive mir) sharen will
-        distances = zeros(Int, num_players)
+        distances = zeros(Float64, num_players)
         sharing_index = zeros(Int, num_players)
         ϕ_targets = ϕ[all_players_ind[sorted_index]]
 
@@ -235,7 +235,6 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
         end
     end
 end
-
 
 function Δu(my_index, ϕ, p_share, conf::Config)
     # calculates the difference in utility between sharing and single rides by playing multiple games
@@ -287,8 +286,45 @@ function Δu(my_index, ϕ, p_share, conf::Config_small)
     return Δutils, actually_shared/conf.games
 end
 
+"""
+function distributed_games(x, my_index, ϕ, conf::Config_small)
+    ϕ_ind = x[1]
+    share = x[2]
+    share_config = get_share_config(my_index, ϕ_ind, ϕ, share; max_share_angle=conf.angle_cutoff)  # get angle index of sharing partner
+    if share_config == 0  # if no one shares with me
+        return u_share_single(conf), 0.0
+    else
+        return u_share(ϕ[my_index], ϕ[share_config], conf), 1.0
+    end
+
+end
+
+function Δu(my_index, ϕ, p_share, conf::Config_small)
+    # calculates the difference in utility between sharing and single rides by playing multiple games
+    realisations_phi_index = sample(1:length(ϕ), (conf.player_count-1, conf.games))
+    realisations_share = [sample([false,true], Weights([1-p_share[i], p_share[i]])) for i in realisations_phi_index]
+
+    # fill util_share for each realisation
+    actually_shared = 0
+    Δutils = zeros(conf.games)
+
+    games_iterator = zip(eachcol(realisations_phi_index), eachcol(realisations_share))
+
+    Δutils = pmap(x -> distributed_games(x, my_index, ϕ, conf), games_iterator)
+
+    Δutils_end = mean([x[1] for x in Δutils])
+    actually_shared = sum([x[2] for x in Δutils])
+
+    return Δutils_end, actually_shared/conf.games
+end
+"""
 
 function Δu_array(ϕ, p_share, conf)
+
+    result = pmap(x->Δu(x, ϕ, p_share, conf), 1:length(ϕ))
+    Δu_values = [i[1] for i in result]
+    shared = [i[2] for i in result]
+    """
     Δu_values = zeros(length(ϕ))
     shared = zeros(length(ϕ))
     for i in 1:length(ϕ)
@@ -296,6 +332,7 @@ function Δu_array(ϕ, p_share, conf)
         Δu_values[i] = result[1]
         shared[i] = result[2]
     end
+    """
     return Δu_values, shared
 
 end
@@ -316,18 +353,6 @@ function replicator_step(p_share, ϕ::LinRange, conf)
     return p_new, result[2]
 end
 
-function dpdt!(dp, p, param, t)
-    # dgl to solve with different solvers
-    dp .= p .* (1 .- p) .* Δu_array(param[1], p, param[2])
-end
-
-
-function dpdt_iter!(dp, p, param, t)
-    for (i, p_i) in enumerate(p)
-        dp[i] = p[i] * (1 - p[i]) * Δu(i, param[1], p, param[2])
-    end
-end
-
 
 function develop_p(p_0, ϕ, conf)
     p_t0 = copy(p_0)
@@ -346,7 +371,7 @@ function solve_time_evolution(p_0, ϕ, conf)
     save_array = zeros(length(ϕ), conf.steps+1)
     save_array[:,1] .= p_0
     actual_dist_array = zeros(length(ϕ), conf.steps+1)
-    print("step 1 of $(conf.steps) done.\r")
+    #print("step 1 of $(conf.steps) done.\r")
     for i in 2:conf.steps+1
         result = replicator_step(save_array[:, i-1], ϕ, conf)
         save_array[:,i] .= result[1]
