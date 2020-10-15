@@ -56,6 +56,8 @@ function get_λ_from_p(p_0, p_t, ϕ, δ, k, t)
     a = log.(a.+1)
     return a/t
 end
+
+"""
 b_i::Float64  # positive constant
 α::Float64  # price factor
 β::Float64  # detour factor
@@ -72,32 +74,10 @@ player_count::Int  # number of players
 dt::Float64  # timestep
 games::Int  # games played for each direction
 steps::Int  # integration steps
-
-α = 0.2
-β = 0.6
-γ = 1
-ϵ = 0.3
-p = 1
-
-r_c = 1
-
-dt = 1
-ϕ_res = 200
-ϕ = LinRange(0,2π, ϕ_res)
-
-fp = α*ϵ*p / (γ+2*β/π)
-
-δ = 0.01
-p_0 = (fp .+ sin.(1 * ϕ) * δ)
-
-λ = zeros(11)
-for k in 0:10
-    p_2 = (fp .+ cos.(k * ϕ) * δ)
-    p_1 = replicator_step(p_2, ϕ, α, β, γ, ϵ, p, r_c, dt)
-    λ[k+1] = mean(get_λ_from_p(p_2, p_1, ϕ, δ, k, dt))
-end
+"""
 
 
+"""
 #Δu_array = [Δu(α, β, γ, ϵ, p, r_c, ϕ, p_0, ϕ_i) for ϕ_i in ϕ]
 ax = plot(ϕ, p_0)
 ax = developement_plot(ax, p_0, ϕ, α, β, γ, ϵ, p, r_c, dt)
@@ -106,3 +86,4 @@ xlabel!(ax, "Angle ϕ")
 title!(ax, "Probability of sharing, 2 players, analytical")
 
 display(ax)
+"""
