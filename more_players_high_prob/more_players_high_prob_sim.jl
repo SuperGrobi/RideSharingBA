@@ -10,12 +10,6 @@ p_0 = (zeros(ϕ_res) .+ 0.8)
 p_0 .-= cos.(1 * ϕ) * 0.03
 end
 
-@everywhere function multi_dev(conf, ϕ, p_0, folder)
-    println("starting simulation with b = ", conf.b)
-    p_end = solve_time_evolution(p_0, ϕ, conf)
-    save_sim(p_end, conf, folder)
-end
-
 configs = []
 for n in [16]
     for b in 4:0.2:8
@@ -23,6 +17,4 @@ for n in [16]
     end
 end
 
-@time pmap(c->multi_dev(c, ϕ, p_0, "test/"), configs)
-
-#run_multi_sims(configs[9:end], ϕ_res, p_0, "more_players_high_prob/")
+run_multi_sims(configs[9:end], ϕ_res, p_0, "more_players_high_prob/")
