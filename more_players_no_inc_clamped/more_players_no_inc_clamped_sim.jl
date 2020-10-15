@@ -13,9 +13,9 @@ end
 
 configs = []
 for n in [16]
-    for b in 2.5:0.3:8
-        push!(configs, Config_small(1, b, 0, π, n, 0.7, 1000, 100))
+    for b in 3.4:0.2:7
+        push!(configs, Config_small(1, b, 0, π, n, 1.2, 1000, 200))
     end
 end
-
-run_multi_sims(configs, ϕ_res, p_0, 0.9, 0.1, "")
+wiggle_every = 10
+run_multi_sims(configs, ϕ_res, p_0, wiggle_every, "")
