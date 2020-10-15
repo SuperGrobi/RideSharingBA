@@ -367,22 +367,28 @@ function develop_p(p_0, ϕ, conf)
     return p_t0, actual_dist
 end
 
-function convolve(p, kernel_length=11)
-    edge_overap = kernel_length ÷ 2
-    conv_base = [p..., p[1:2edge_overap]...]
-    kernel = ones(kernel_length) ./ kernel_length
+function convolve(p, kernel_length=21)
+    """convolves a periodic function with a gaussian kernel
+    (maybe constant of some sort would be better?)"""
+    edge_overlap = kernel_length ÷ 2
+    conv_base = [p..., p[1:2edge_overlap]...]
+
+    sup_kernel = (-edge_overlap:1:edge_overlap) .* 3/edge_overlap  # 3 controls the cutoff. higher means narrower gaussian
+    kernel = @. exp(-1/2 * sup_kernel^2) / sqrt(2π)
+    kernel = kernel ./ sum(kernel)
+
     convolved = [sum(kernel .* conv_base[i:i+kernel_length-1]) for i in 1:length(conv_base)-kernel_length+1]
-    return circshift(convolved, edge_overap)
+    return circshift(convolved, edge_overlap)
 end
 
 
-function solve_time_evolution(p_0, ϕ, conf, wiggle_every)
+function solve_time_evolution(p_0, ϕ, conf, smooth_every=10, kernel_length=21)
     save_array = zeros(length(ϕ), conf.steps+1)
     save_array[:,1] .= p_0
     actual_dist_array = zeros(length(ϕ), conf.steps+1)
     print("step 1 of $(conf.steps) done.\r")
     for i in 2:conf.steps+1
-        input_p = i%wiggle_every==0 ? (save_array[:, i-1] .* 0.8) .+ 0.1 : save_array[:, i-1]
+        input_p = i%smooth_every==0 ? convolve(save_array[:, i-1], kernel_length) : save_array[:, i-1]
         result = replicator_step(input_p, ϕ, conf)
         save_array[:,i] .= result[1]
         actual_dist_array[:,i] .= result[2]
@@ -413,7 +419,7 @@ function load_sim(source::String)
 end
 
 
-function run_multi_sims(configs, ϕ_res, p_fac::Number, wiggle_every, folder)
+function run_multi_sims(configs, ϕ_res, p_fac::Number, smooth_every, kernel_length, folder)
     # runs multiple simulations wit random initial conditions
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
     for (i,conf) in enumerate(configs)
@@ -423,7 +429,7 @@ function run_multi_sims(configs, ϕ_res, p_fac::Number, wiggle_every, folder)
         print(conf)
         println("==========================================")
         p_0 = (zeros(ϕ_res) .* p_fac)
-        p_end = solve_time_evolution(p_0, ϕ, conf, wiggle_every)
+        p_end = solve_time_evolution(p_0, ϕ, conf, smooth_every, kernel_length)
         println("==========================================")
         save_sim(p_end, conf, folder)
         println("saved!")
@@ -432,7 +438,7 @@ function run_multi_sims(configs, ϕ_res, p_fac::Number, wiggle_every, folder)
     end
 end
 
-function run_multi_sims(configs, ϕ_res, p_0::Array, wiggle_every, folder)
+function run_multi_sims(configs, ϕ_res, p_0::Array, smooth_every, kernel_length, folder)
     # runs multiple simulations with given start function
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
     for (i,conf) in enumerate(configs)
@@ -441,7 +447,7 @@ function run_multi_sims(configs, ϕ_res, p_0::Array, wiggle_every, folder)
         println("now simulating the system:")
         print(conf)
         println("==========================================")
-        p_end = solve_time_evolution(p_0, ϕ, conf, wiggle_every)
+        p_end = solve_time_evolution(p_0, ϕ, conf, smooth_every, kernel_length)
         println("==========================================")
         save_sim(p_end, conf, folder)
         println("saved!")
