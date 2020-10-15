@@ -339,13 +339,13 @@ end
 
 
 
-function replicator_step(p_share, ϕ::LinRange, conf; clamp_max=1.0, clamp_min=0.0)
+function replicator_step(p_share, ϕ::LinRange, conf)
     result = Δu_array(ϕ, p_share, conf)
     p_new = p_share + conf.dt * p_share .* (1 .- p_share) .* result[1]
-    larger = p_new .> clamp_max
-    smaller = p_new .< clamp_min
+    larger = p_new .> 1
+    smaller = p_new .< 0
     p_new[larger] .= 1 .- rand(length(larger))[larger]*0.01
-    p_new[smaller] .= rand(length(smaller))[smaller]*0.01
+    p_new[smaller] .= 0 .+ rand(length(smaller))[smaller]*0.01
     #p_new = zeros(length(p_share))
     #for i in 1:length(p_share)
     #    p_new[i] = p_share[i] + conf[:dt] * p_share[i]*(1-p_share[i]) * Δu(i, ϕ, p_share, games, players, r_0, b, α, ϵ, p, β, γ, angle_cutoff)
@@ -354,11 +354,11 @@ function replicator_step(p_share, ϕ::LinRange, conf; clamp_max=1.0, clamp_min=0
 end
 
 
-function develop_p(p_0, ϕ, conf; clamp_max=1.0, clamp_min=0.0)
+function develop_p(p_0, ϕ, conf)
     p_t0 = copy(p_0)
     actual_dist = zeros(length(p_0))
     for i in 1:conf.steps
-        result = replicator_step(p_t0, ϕ, conf, clamp_max=clamp_max, clamp_min=clamp_min)
+        result = replicator_step(p_t0, ϕ, conf)
         p_t1 = result[1]
         p_t0 = p_t1
         actual_dist = result[2]
@@ -367,13 +367,13 @@ function develop_p(p_0, ϕ, conf; clamp_max=1.0, clamp_min=0.0)
     return p_t0, actual_dist
 end
 
-function solve_time_evolution(p_0, ϕ, conf; clamp_max=1.0, clamp_min=0.0)
+function solve_time_evolution(p_0, ϕ, conf)
     save_array = zeros(length(ϕ), conf.steps+1)
     save_array[:,1] .= p_0
     actual_dist_array = zeros(length(ϕ), conf.steps+1)
     print("step 1 of $(conf.steps) done.\r")
     for i in 2:conf.steps+1
-        result = replicator_step(save_array[:, i-1], ϕ, conf, clamp_max=clamp_max, clamp_min=clamp_min)
+        result = replicator_step(save_array[:, i-1], ϕ, conf)
         save_array[:,i] .= result[1]
         actual_dist_array[:,i] .= result[2]
         print("step $(i-1) of $(conf.steps) done.\r")
@@ -403,7 +403,7 @@ function load_sim(source::String)
 end
 
 
-function run_multi_sims(configs, ϕ_res, p_fac::Number, c_max, c_min, folder)
+function run_multi_sims(configs, ϕ_res, p_fac::Number, folder)
     # runs multiple simulations wit random initial conditions
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
     for (i,conf) in enumerate(configs)
@@ -413,7 +413,7 @@ function run_multi_sims(configs, ϕ_res, p_fac::Number, c_max, c_min, folder)
         print(conf)
         println("==========================================")
         p_0 = (zeros(ϕ_res) .* p_fac)
-        p_end = solve_time_evolution(p_0, ϕ, conf, clamp_max=c_max, clamp_min=c_min)
+        p_end = solve_time_evolution(p_0, ϕ, conf)
         println("==========================================")
         save_sim(p_end, conf, folder)
         println("saved!")
@@ -422,7 +422,7 @@ function run_multi_sims(configs, ϕ_res, p_fac::Number, c_max, c_min, folder)
     end
 end
 
-function run_multi_sims(configs, ϕ_res, p_0::Array, c_max, c_min, folder)
+function run_multi_sims(configs, ϕ_res, p_0::Array, folder)
     # runs multiple simulations with given start function
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
     for (i,conf) in enumerate(configs)
@@ -431,7 +431,7 @@ function run_multi_sims(configs, ϕ_res, p_0::Array, c_max, c_min, folder)
         println("now simulating the system:")
         print(conf)
         println("==========================================")
-        p_end = solve_time_evolution(p_0, ϕ, conf, clamp_max=c_max, clamp_min=c_min)
+        p_end = solve_time_evolution(p_0, ϕ, conf)
         println("==========================================")
         save_sim(p_end, conf, folder)
         println("saved!")
