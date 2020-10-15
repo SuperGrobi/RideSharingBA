@@ -5,4 +5,3 @@
 - many players, high start value: does this occur without cutoff?
 
 - how does the time evolution of a starting probability look like? (make nice plots...)
-- how can I rescale the utility to identify independent variables
