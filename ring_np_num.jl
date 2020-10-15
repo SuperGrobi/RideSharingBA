@@ -108,7 +108,7 @@ function u_share(ϕ_i, ϕ, conf::Config_small)
     #= calculates the difference in utility if user is shared at position ϕ_i with user at position ϕ =#
     f1 = conf.a - conf.c
     if rand([true, false])
-        return f1 - sqrt(2) * conf.b * sqrt(1 - cos(ϕ-ϕ_i))
+        return f1 - conf.b * cos_satz(ϕ-ϕ_i)
     else
         return f1
     end
@@ -121,7 +121,7 @@ function u_share_single(conf::Config_small)
 end
 
 function cos_satz(Δϕ)
-    return sqrt(1-cos(Δϕ))
+    return sqrt(2-2cos(Δϕ))
 end
 
 function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
@@ -339,11 +339,11 @@ end
 
 
 
-function replicator_step(p_share, ϕ::LinRange, conf)
+function replicator_step(p_share, ϕ::LinRange, conf; clamp_max=1.0, clamp_min=0.0)
     result = Δu_array(ϕ, p_share, conf)
     p_new = p_share + conf.dt * p_share .* (1 .- p_share) .* result[1]
-    larger = p_new .> 1
-    smaller = p_new .< 0
+    larger = p_new .> clamp_max
+    smaller = p_new .< clamp_min
     p_new[larger] .= 1 .- rand(length(larger))[larger]*0.01
     p_new[smaller] .= rand(length(smaller))[smaller]*0.01
     #p_new = zeros(length(p_share))
@@ -354,11 +354,11 @@ function replicator_step(p_share, ϕ::LinRange, conf)
 end
 
 
-function develop_p(p_0, ϕ, conf)
+function develop_p(p_0, ϕ, conf; clamp_max=1.0, clamp_min=0.0)
     p_t0 = copy(p_0)
     actual_dist = zeros(length(p_0))
     for i in 1:conf.steps
-        result = replicator_step(p_t0, ϕ, conf)
+        result = replicator_step(p_t0, ϕ, conf, clamp_max=clamp_max, clamp_min=clamp_min)
         p_t1 = result[1]
         p_t0 = p_t1
         actual_dist = result[2]
@@ -367,13 +367,13 @@ function develop_p(p_0, ϕ, conf)
     return p_t0, actual_dist
 end
 
-function solve_time_evolution(p_0, ϕ, conf)
+function solve_time_evolution(p_0, ϕ, conf; clamp_max=1.0, clamp_min=0.0)
     save_array = zeros(length(ϕ), conf.steps+1)
     save_array[:,1] .= p_0
     actual_dist_array = zeros(length(ϕ), conf.steps+1)
-    #print("step 1 of $(conf.steps) done.\r")
+    print("step 1 of $(conf.steps) done.\r")
     for i in 2:conf.steps+1
-        result = replicator_step(save_array[:, i-1], ϕ, conf)
+        result = replicator_step(save_array[:, i-1], ϕ, conf, clamp_max=clamp_max, clamp_min=clamp_min)
         save_array[:,i] .= result[1]
         actual_dist_array[:,i] .= result[2]
         print("step $(i-1) of $(conf.steps) done.\r")
@@ -403,7 +403,7 @@ function load_sim(source::String)
 end
 
 
-function run_multi_sims(configs, ϕ_res, p_fac::Number, folder)
+function run_multi_sims(configs, ϕ_res, p_fac::Number, c_max, c_min, folder)
     # runs multiple simulations wit random initial conditions
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
     for (i,conf) in enumerate(configs)
@@ -413,7 +413,7 @@ function run_multi_sims(configs, ϕ_res, p_fac::Number, folder)
         print(conf)
         println("==========================================")
         p_0 = (zeros(ϕ_res) .* p_fac)
-        p_end = solve_time_evolution(p_0, ϕ, conf)
+        p_end = solve_time_evolution(p_0, ϕ, conf, clamp_max=c_max, clamp_min=c_min)
         println("==========================================")
         save_sim(p_end, conf, folder)
         println("saved!")
@@ -422,7 +422,7 @@ function run_multi_sims(configs, ϕ_res, p_fac::Number, folder)
     end
 end
 
-function run_multi_sims(configs, ϕ_res, p_0::Array, folder)
+function run_multi_sims(configs, ϕ_res, p_0::Array, c_max, c_min, folder)
     # runs multiple simulations with given start function
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
     for (i,conf) in enumerate(configs)
@@ -431,7 +431,7 @@ function run_multi_sims(configs, ϕ_res, p_0::Array, folder)
         println("now simulating the system:")
         print(conf)
         println("==========================================")
-        p_end = solve_time_evolution(p_0, ϕ, conf)
+        p_end = solve_time_evolution(p_0, ϕ, conf, clamp_max=c_max, clamp_min=c_min)
         println("==========================================")
         save_sim(p_end, conf, folder)
         println("saved!")
