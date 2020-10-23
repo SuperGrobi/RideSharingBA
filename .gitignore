@@ -5,5 +5,5 @@
 2_player_full_comparable_scale/a*
 more_players_no_inc/a*
 more_players_high_prob/a*
-more_players_no_inc_clamped/a*
+more_players_no_inc_clamped/*/a*
 .ipynb_checkpoints/*
