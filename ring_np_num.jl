@@ -47,7 +47,7 @@ function print(x::Config)
 
 end
 
-struct Config_small
+mutable struct Config_small
     # contains rescaled simulation parameters
     #TODO finish struct, rework functions, add new functions
     # player parameters
@@ -320,7 +320,6 @@ end
 """
 
 function Δu_array(ϕ, p_share, conf)
-
     result = pmap(x->Δu(x, ϕ, p_share, conf), 1:length(ϕ))
     Δu_values = [i[1] for i in result]
     shared = [i[2] for i in result]
@@ -388,7 +387,12 @@ function solve_time_evolution(p_0, ϕ, conf, smooth_every=10, kernel_length=21)
     actual_dist_array = zeros(length(ϕ), conf.steps+1)
     print("step 1 of $(conf.steps) done.\r")
     for i in 2:conf.steps+1
-        input_p = i%smooth_every==0 ? convolve(save_array[:, i-1], kernel_length) : save_array[:, i-1]
+        input_p = if ((i%smooth_every==0) && (i<(conf.steps-smooth_every)))
+                    convolve(save_array[:, i-1], kernel_length)
+                else
+                    save_array[:, i-1]
+                end
+        input_p = ((i%smooth_every==0) && (i<(conf.steps-smooth_every)))  ? convolve(save_array[:, i-1], kernel_length) : save_array[:, i-1]
         result = replicator_step(input_p, ϕ, conf)
         save_array[:,i] .= result[1]
         actual_dist_array[:,i] .= result[2]
@@ -438,6 +442,7 @@ function run_multi_sims(configs, ϕ_res, p_fac::Number, smooth_every, kernel_len
     end
 end
 
+
 function run_multi_sims(configs, ϕ_res, p_0::Array, smooth_every, kernel_length, folder)
     # runs multiple simulations with given start function
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
@@ -456,6 +461,44 @@ function run_multi_sims(configs, ϕ_res, p_0::Array, smooth_every, kernel_length
     end
 end
 
+
+function run_multi_track(configs, ϕ_res, p_0::Array, smooth_every, kernel_length, folder)
+    # runs multiple simulations with given start function
+    ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
+    for (i,conf) in enumerate(configs)
+        println("==========================================")
+        println("simulating $i out of $(length(configs)) ")
+        println("now simulating the system:")
+        print(conf)
+        println("==========================================")
+        p_end = solve_time_evolution(p_0, ϕ, conf, smooth_every, kernel_length)
+        p_0 = (p_end[1][:,end] .* 0.8) .+ 0.1
+        println("==========================================")
+        save_sim(p_end, conf, folder)
+        println("saved!")
+        println("==========================================")
+
+    end
+end
+
+
+function run_multi_different_start(configs, ϕ_res, p_0::Array, smooth_every, kernel_length, folder)
+    # runs multiple simulations with given start function
+    ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
+    for (i,conf) in enumerate(configs)
+        println("==========================================")
+        println("simulating $i out of $(length(configs)) ")
+        println("now simulating the system:")
+        print(conf)
+        println("==========================================")
+        p_end = solve_time_evolution(p_0[i], ϕ, conf, smooth_every, kernel_length)
+        println("==========================================")
+        save_sim(p_end, conf, folder)
+        println("saved!")
+        println("==========================================")
+
+    end
+end
 
 function plot_result(result)
     p_end = result[1]
