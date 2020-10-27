@@ -21,7 +21,7 @@ kernel_length = 41
 
 reverse!(configs)
 # create long simulation object
-seed_config = configs[2]
+seed_config = configs[1]
 seed_config.steps = 1000
 
 println("################### seed simulation ###################")
@@ -32,10 +32,10 @@ p_track_start = seed_prob[1][:,end]
 configs[1].steps = configs[2].steps
 
 println("################### starting multi sim ###################")
-run_multi_track(configs, ϕ_res, p_track_start, smooth_every, kernel_length, "16_low/")
+run_multi_track(configs, ϕ_res, p_track_start, smooth_every, kernel_length, "$n_low/")
 
 println("################### small b_explicit ###################")
 
 s_b_conf = Config_small(1, 0.1, 0, π, n, 14, 1000, 300)
-small_b = solve_time_evolution(p_0, ϕ, seed_config, smooth_every, kernel_length)
-save_sim(small_b, s_b_conf, "16_low/")
+small_b = solve_time_evolution(p_0, ϕ, s_b_conf, smooth_every, kernel_length)
+save_sim(small_b, s_b_conf, "$n_low/")
