@@ -56,12 +56,12 @@ function get_crit_b(n, c, games, ϕ)
             ang = ϕ[index]
             ang = ang > π ? 2π - ang : ang
             dist = cos_satz(ang)
+            push!(detours, dist/2)
         else
             dist = 0
         end
-        push!(detours, dist/2)
     end
     mhd = mean(detours)
-    return mhd
+    #return mhd
     return (1-c) / mhd
 end
