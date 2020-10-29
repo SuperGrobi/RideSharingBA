@@ -4,6 +4,7 @@ using Plots
 using Random
 using StatsBase
 using JLD2
+using Distributed
 
 pyplot()
 
@@ -44,7 +45,6 @@ function print(x::Config)
     println("dt: $(x.dt)")
     println("games: $(x.games)")
     println("steps: $(x.steps)")
-
 end
 
 mutable struct Config_small
