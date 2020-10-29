@@ -21,10 +21,10 @@ kernel_length = 41
 
 
 println("################### starting multi sim ###################")
-run_multi_sims(configs, ϕ_res, p_0, smooth_every, kernel_length, "8_high/")
+run_multi_sims(configs, ϕ_res, p_0, smooth_every, kernel_length, "$(n)_high/")
 
-#println("################### small b_explicit ###################")
+println("################### small b_explicit ###################")
 
-#s_b_conf = Config_small(1, 0.1, 0, π, n, 14, 1000, 300)
-#small_b = solve_time_evolution(p_0, ϕ, s_b_conf, smooth_every, kernel_length)
-#save_sim(small_b, s_b_conf, "8_high/")
+s_b_conf = Config_small(1, 0.1, 0, π, n, 14, 1000, 300)
+small_b = solve_time_evolution(p_0, ϕ, s_b_conf, smooth_every, kernel_length)
+save_sim(small_b, s_b_conf, "$(n)_high/")

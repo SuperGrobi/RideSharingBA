@@ -3,7 +3,7 @@ using Distributed
 
 
 @everywhere begin
-    n = 8
+    n = 64
     ϕ_res = 200
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
 
@@ -12,7 +12,7 @@ using Distributed
 end
 
 configs = []
-for b in 3:0.1:8
+for b in [1, 11:1:25...]
     push!(configs, Config_small(1, b, 0, π, n, 6/b, 1000, 300))
 end
 
@@ -24,18 +24,18 @@ reverse!(configs)
 seed_config = configs[1]
 seed_config.steps = 1000
 
-println("################### seed simulation ###################")
-seed_prob = solve_time_evolution(p_0, ϕ, seed_config, smooth_every, kernel_length)
-p_track_start = seed_prob[1][:,end]
+#println("################### seed simulation ###################")
+#seed_prob = solve_time_evolution(p_0, ϕ, seed_config, smooth_every, kernel_length)
+#p_track_start = seed_prob[1][:,end]
 
 # reset seed config
-configs[1].steps = configs[2].steps
+#configs[1].steps = configs[2].steps
 
-println("################### starting multi sim ###################")
-run_multi_track(configs, ϕ_res, p_track_start, smooth_every, kernel_length, "$(n)_low/")
+#println("################### starting multi sim ###################")
+#run_multi_track(configs, ϕ_res, p_track_start, smooth_every, kernel_length, "$(n)_low/")
 
-println("################### small b_explicit ###################")
-
-s_b_conf = Config_small(1, 0.1, 0, π, n, 14, 1000, 300)
+#println("################### small b_explicit ###################")
+b_small = 6
+s_b_conf = Config_small(1, b_small, 0, π, n, 3/b_small, 3000, 50)
 small_b = solve_time_evolution(p_0, ϕ, s_b_conf, smooth_every, kernel_length)
 save_sim(small_b, s_b_conf, "$(n)_low/")
