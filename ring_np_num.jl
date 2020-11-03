@@ -5,6 +5,8 @@ using Random
 using StatsBase
 using JLD2
 using Distributed
+include("./load_and_process.jl")
+
 
 pyplot()
 
@@ -108,7 +110,7 @@ function u_share(ϕ_i, ϕ, conf::Config_small)
     #= calculates the difference in utility if user is shared at position ϕ_i with user at position ϕ =#
     f1 = conf.a - conf.c
     if rand([true, false])
-        return f1 - conf.b * cos_satz(ϕ-ϕ_i)
+        return f1 - (conf.b * cos_satz(ϕ-ϕ_i))
     else
         return f1
     end
@@ -140,7 +142,7 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
     # indizes von self und "rechts" und "links" von mir
     sorted_position = findall(x->x==1, sorted_index)[1]
     left_ind = sorted_position == 1 ? num_players : sorted_position-1
-    right_ind = sorted_position % num_players + 1
+    right_ind = (sorted_position % num_players) + 1
 
     ring_res = length(ϕ)  # auflösung des ringes (damit wir uns nicht mit winkeln rumschlagen müssen.)
 
@@ -163,7 +165,7 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
         right_dist = right_dist>π ? 2π-right_dist : right_dist
 
         # wenn beide winkel größer als max cutoff winkel sind, dann finde keinen partner
-        if (left_dist > max_share_angle) & (right_dist > max_share_angle)
+        if (left_dist > max_share_angle) && (right_dist > max_share_angle)
             return 0
         end
     end
@@ -199,7 +201,7 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
             return i1
         else
             # if shifted position of self in sorted array is even: return angle index before, else after
-            i2 = (sorted_position+1) % 2 == 0 ? all_players_ind[sorted_index[left_ind]] : all_players_ind[sorted_index[right_ind]]
+            i2 = sorted_position % 2 == 1 ? all_players_ind[sorted_index[left_ind]] : all_players_ind[sorted_index[right_ind]]
             return i2
         end
 
@@ -367,6 +369,7 @@ function develop_p(p_0, ϕ, conf)
 end
 
 function convolve(p, kernel_length=21)
+    kernel_length = kernel_length%2==0 ? kernel_length+1 : kernel_length
     """convolves a periodic function with a gaussian kernel
     (maybe constant of some sort would be better?)"""
     edge_overlap = kernel_length ÷ 2
@@ -387,15 +390,25 @@ function solve_time_evolution(p_0, ϕ, conf, smooth_every=10, kernel_length=21)
     actual_dist_array = zeros(length(ϕ), conf.steps+1)
     print("step 1 of $(conf.steps) done.\r")
     for i in 2:conf.steps+1
-        input_p = if ((i%smooth_every==0) && (i<(conf.steps-smooth_every)))
-                    convolve(save_array[:, i-1], kernel_length)
-                else
-                    save_array[:, i-1]
-                end
-        input_p = ((i%smooth_every==0) && (i<(conf.steps-smooth_every)))  ? convolve(save_array[:, i-1], kernel_length) : save_array[:, i-1]
+
+        if ((i%smooth_every==0) && (i<(conf.steps-smooth_every)))
+            width = simple_width(1:length(ϕ), save_array[:, i-1], 0.7)
+            if width > 1.4*kernel_length
+                kernel = kernel_length
+                #println("convolved at ", i, " with ", kernel)
+            else
+                kernel = 3 + ceil(Int, 3/4 * width)
+                #println("convolved at ", i, " with ", kernel)
+            end
+            input_p = convolve(save_array[:, i-1], kernel)
+        else
+            input_p = save_array[:, i-1]
+        end
+
         result = replicator_step(input_p, ϕ, conf)
         save_array[:,i] .= result[1]
         actual_dist_array[:,i] .= result[2]
+        #println("step $(i-1) of $(conf.steps) done.")
         print("step $(i-1) of $(conf.steps) done.\r")
     end
     println("Simulation completed!")
@@ -520,3 +533,21 @@ function plot_result(result)
     plot!(p3, ϕ, p_end[2][:,end], label="match probability", title = "end distributions")
     plot(p1,p2,p3, layout=l)
 end
+
+
+function plot_polar(ϕ, ϕ_ind, ϕ_i)
+       angles = ϕ[ϕ_ind]
+       x = sin.(angles)
+       y = cos.(angles)
+
+       share_partner = get_share_config(ϕ_i, ϕ_ind, ϕ, trues(length(ϕ_ind)))
+       if share_partner != 0
+           share_x = [sin(ϕ[ϕ_i]), sin(ϕ[share_partner])]
+           share_y = [cos(ϕ[ϕ_i]), cos(ϕ[share_partner])]
+           plot(share_x, share_y, title=share_partner, label="")y
+       else
+           plot([0], [0], label="")
+       end
+       scatter!(x,y, color=:black, ylims=(-1.1, 1.1), xlims=(-1.1,1.1), label=ϕ_ind)
+       scatter!([sin(ϕ[ϕ_i])], [cos(ϕ[ϕ_i])], color=:red, ratio=1, label=ϕ_i)
+   end
