@@ -12,7 +12,7 @@ using Distributed
 end
 
 configs = []
-for b in 5:1:25
+for b in 9.0:0.1:9.5  # 9.6:0.1:11 no reverse
     push!(configs, Config_small(1, b, 0, π, n, 6/b, 1000, 300))
 end
 
