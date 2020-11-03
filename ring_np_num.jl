@@ -141,7 +141,7 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
 
     # indizes von self und "rechts" und "links" von mir
     sorted_position = findall(x->x==1, sorted_index)[1]
-    left_ind = sorted_position == 1 ? num_players : sorted_position-1
+    left_ind = (sorted_position == 1) ? num_players : sorted_position-1
     right_ind = (sorted_position % num_players) + 1
 
     ring_res = length(ϕ)  # auflösung des ringes (damit wir uns nicht mit winkeln rumschlagen müssen.)
@@ -161,11 +161,11 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
         left_dist = abs(ϕ[ϕ_i] - ϕ[all_players_ind[sorted_index[left_ind]]])
         right_dist = abs(ϕ[ϕ_i] - ϕ[all_players_ind[sorted_index[right_ind]]])
         # wenn größer als halber winkel
-        left_dist = left_dist>π ? 2π-left_dist : left_dist
-        right_dist = right_dist>π ? 2π-right_dist : right_dist
+        left_dist = left_dist>=π ? 2π-left_dist : left_dist
+        right_dist = right_dist>=π ? 2π-right_dist : right_dist
 
         # wenn beide winkel größer als max cutoff winkel sind, dann finde keinen partner
-        if (left_dist > max_share_angle) && (right_dist > max_share_angle)
+        if (left_dist > max_share_angle) && (right_dist > max_share_angle)  # TODO: rework for cutoff.
             return 0
         end
     end
@@ -224,17 +224,14 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
                 # if I am at the last position, in shifted array, I wont get matched
                 sharing_index[shift+1] = 0
             else
-                sharing_index[shift+1] = ((sorted_position+shift) % num_players) % 2 == 0 ? all_players_ind[sorted_index[left_ind]] : all_players_ind[sorted_index[right_ind]]
+                my_ind_after_shift = ((sorted_position + shift - 1) % num_players) + 1
+                sharing_index[shift+1] = my_ind_after_shift % 2 == 0 ? all_players_ind[sorted_index[left_ind]] : all_players_ind[sorted_index[right_ind]]
             end
         end
 
         # decide on return value
         final_share_index = sharing_index[argmin(distances)]
-        if final_share_index == 0
-            return 0
-        else
-            return final_share_index
-        end
+        return final_share_index
     end
 end
 
