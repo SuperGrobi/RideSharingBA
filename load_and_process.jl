@@ -48,7 +48,7 @@ end
 function simple_fitting(ϕ, p, threshold=0.5)
     places = p.>threshold
     larger_range = ϕ[places]
-    if length(larger_range) == 0
+    if length(larger_range) <= 1
         return 0, 0
     else
         return larger_range[1], larger_range[end]
