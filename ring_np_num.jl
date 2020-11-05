@@ -550,17 +550,18 @@ function plot_polar(ϕ, ϕ_ind, ϕ_i)
    end
 
 
-function validate(width, offset, ϕ, conf, p_share, smooth_every=10, kernel_length=41, folder)
+function validate(width, offset, ϕ, conf, smooth_every, kernel_length, folder)
    # offset: how much wider the test start peak should be (angle)
    ϕ_res = length(ϕ)
    p = zeros(ϕ_res)
-   peak_width = floor(Int, (ϕ_res+ offset)/2π * ϕ_res)
+   peak_width = floor(Int, (width + offset)/2π * ϕ_res)
    peak_start = floor(Int, (ϕ_res - peak_width) / 2)
    p[peak_start:peak_start+peak_width] .= 1
    p = (p .* 0.8) .+ 0.1
-   p_end, _ = solve_time_evolution(p, ϕ, conf, smooth_every, kernel_length)
-   p_end = shift_end_to_beginning(p_end);
-   sim_width = simple_width(ϕ, p_end[:,end])
+   p_end = solve_time_evolution(p, ϕ, conf, smooth_every, kernel_length)
+   p_end = (shift_end_to_beginning(p_end[1]), p_end[2])
+   sim_width = simple_width(ϕ, p_end[1][:,end])
    save_sim(p_end, conf, folder)
    println("saved!")
-   return p_end, sim_width
+   return p_end[1], sim_width
+end
