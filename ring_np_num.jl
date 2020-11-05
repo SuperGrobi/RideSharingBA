@@ -354,15 +354,15 @@ end
 
 function develop_p(p_0, ϕ, conf)
     p_t0 = copy(p_0)
-    actual_dist = zeros(length(p_0))
+    actual_match= zeros(length(p_0))
     for i in 1:conf.steps
         result = replicator_step(p_t0, ϕ, conf)
         p_t1 = result[1]
         p_t0 = p_t1
-        actual_dist = result[2]
+        actual_match = result[2]
         print("step $i finished.\r")
     end
-    return p_t0, actual_dist
+    return p_t0, actual_match
 end
 
 function convolve(p, kernel_length=21)
@@ -442,7 +442,7 @@ function run_multi_sims(configs, ϕ_res, p_fac::Number, smooth_every, kernel_len
         println("now simulating the system:")
         print(conf)
         println("==========================================")
-        p_0 = (zeros(ϕ_res) .* p_fac)
+        p_0 = ((rand(ϕ_res) .+ 0.01) .* p_fac)
         p_end = solve_time_evolution(p_0, ϕ, conf, smooth_every, kernel_length)
         println("==========================================")
         save_sim(p_end, conf, folder)
@@ -548,3 +548,19 @@ function plot_polar(ϕ, ϕ_ind, ϕ_i)
        scatter!(x,y, color=:black, ylims=(-1.1, 1.1), xlims=(-1.1,1.1), label=ϕ_ind)
        scatter!([sin(ϕ[ϕ_i])], [cos(ϕ[ϕ_i])], color=:red, ratio=1, label=ϕ_i)
    end
+
+
+function validate(width, offset, ϕ, conf, p_share, smooth_every=10, kernel_length=41, folder)
+   # offset: how much wider the test start peak should be (angle)
+   ϕ_res = length(ϕ)
+   p = zeros(ϕ_res)
+   peak_width = floor(Int, (ϕ_res+ offset)/2π * ϕ_res)
+   peak_start = floor(Int, (ϕ_res - peak_width) / 2)
+   p[peak_start:peak_start+peak_width] .= 1
+   p = (p .* 0.8) .+ 0.1
+   p_end, _ = solve_time_evolution(p, ϕ, conf, smooth_every, kernel_length)
+   p_end = shift_end_to_beginning(p_end);
+   sim_width = simple_width(ϕ, p_end[:,end])
+   save_sim(p_end, conf, folder)
+   println("saved!")
+   return p_end, sim_width
