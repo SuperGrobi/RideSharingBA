@@ -23,7 +23,7 @@ reverse!(configs)
 # create long simulation object
 seed_config = configs[1]
 seed_config.steps = 100
-p
+
 println("################### seed simulation ###################")
 seed_prob = solve_time_evolution(p, ϕ, seed_config, smooth_every, kernel_length)
 p_track_start = seed_prob[1][:,end]

@@ -12,19 +12,22 @@ s8_low_widths = [simple_width(ϕ, p[:,end]) for p in s8_low]
 b8_high, s8_high, _ = load_run("more_players_no_inc_final/8_high/")
 s8_high_widths = [simple_width(ϕ, p[:,end]) for p in s8_high]
 
-
 plot(b8_low, s8_low_widths, label="8 players, low start")
 plot!(b8_high, s8_high_widths, label="8 players, high start")
 
 
-#=
-# 16 players
-b16_low, s16_low, c16_low, _ = load_run("more_players_no_inc_high_res/16_low/")
-#s16_low = shift_end_to_beginning.(s16_low);
-s16_low_widths_end = [simple_width(ϕ, p[:,end]) for p in s16_low]
-s16_low_widths_start = [simple_width(ϕ, p[:,1]) for p in s16_low]
-s16_low_widths_start[1] = 2π;
 
+# 16 players
+b16_low, s16_low, _ = load_run("more_players_no_inc_high_res/16_low/")
+s16_low_widths = [simple_width(ϕ, p[:,end]) for p in s16_low]
+
+b16_high, s16_high, _ = load_run("more_players_no_inc_high_res/16_high/")
+s16_high_widths = [simple_width(ϕ, p[:,end]) for p in s16_high]
+
+#plot!(b16_low, s16_low_widths, label="16 players, low start")
+#plot!(b16_high, s16_high_widths, label="16 players, high start")
+
+#=
 # 32 players
 b32_low, s32_low, _ = load_run("more_players_no_inc_high_res/32_low/")
 s32_low = shift_end_to_beginning.(s32_low);
