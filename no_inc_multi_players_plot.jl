@@ -6,16 +6,24 @@ include("load_and_process.jl")
 ϕ_res = 200
 ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
 # 8 players
-b8_low, s8_low, _ = load_run("more_players_no_inc_high_res/8_low/")
-s8_low = shift_end_to_beginning.(s8_low);
+b8_low, s8_low, _ = load_run("more_players_no_inc_final/8_low/")
 s8_low_widths = [simple_width(ϕ, p[:,end]) for p in s8_low]
-s8_low_widths[1] = 2π;
 
+b8_high, s8_high, _ = load_run("more_players_no_inc_final/8_high/")
+s8_high_widths = [simple_width(ϕ, p[:,end]) for p in s8_high]
+
+
+plot(b8_low, s8_low_widths, label="8 players, low start")
+plot!(b8_high, s8_high_widths, label="8 players, high start")
+
+
+#=
 # 16 players
 b16_low, s16_low, c16_low, _ = load_run("more_players_no_inc_high_res/16_low/")
 #s16_low = shift_end_to_beginning.(s16_low);
-s16_low_widths = [simple_width(ϕ, p[:,end]) for p in s16_low]
-s16_low_widths[1] = 2π;
+s16_low_widths_end = [simple_width(ϕ, p[:,end]) for p in s16_low]
+s16_low_widths_start = [simple_width(ϕ, p[:,1]) for p in s16_low]
+s16_low_widths_start[1] = 2π;
 
 # 32 players
 b32_low, s32_low, _ = load_run("more_players_no_inc_high_res/32_low/")
@@ -44,7 +52,9 @@ s48_low_widths[1] = 2π;
 b16_theo = get_b.(16, θ, 0, 10000, 200);
 
 plot(b8_low, s8_low_widths, label="8 players, low start")
-plot!(b16_low, s16_low_widths, label="16 players, low start")
+plot!(b16_low, s16_low_widths_end, label="16 players, low start end")
+plot!(b16_low, s16_low_widths_start, label="16 players, low start start")
+
 plot!(b16_theo, θ, label="theorie 16 players")
 plot!(b32_low, s32_low_widths, label="32 players, low start")
 plot!(b40_low, s40_low_widths, label="40 players, low start")
@@ -57,3 +67,4 @@ plot!(b48_low, s48_low_widths, label="48 players, low start")
 #    p_advanced = solve_time_evolution(x[:,end], ϕ, c16_low[i], 10, 41)
 #    save_sim(p_advanced, c16_low[i], "./more_players_no_inc_high_res/16_low/longer/")
 #end
+=#
