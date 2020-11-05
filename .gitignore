@@ -8,4 +8,5 @@ more_players_high_prob/a*
 more_players_no_inc_clamped/*/a*
 more_players_no_inc_high_res/*/*/a*
 more_players_no_inc_high_res/*/a*
+more_players_no_inc_final/*/a*
 .ipynb_checkpoints/*
