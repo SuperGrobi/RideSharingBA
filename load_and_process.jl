@@ -28,6 +28,9 @@ function load_run(dir)
     player_array = player_array[sorted]
     share_array = share_array[sorted]
     match_array = match_array[sorted]
+
+    share_array = shift_end_to_beginning.(share_array);
+
     return b_array, share_array, configs, player_array, match_array
     end
 
