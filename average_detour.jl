@@ -7,12 +7,11 @@ include("./ring_np_num.jl")
 
 
 
-function get_b(n, Θ, c, games, ϕ_res, width_bias = 0)
+function get_b(n, Θ, c, games, ϕ_res)
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
 
     # build peak with start at first index and end at angle Θ
-    share_end = floor(Int, Θ/2π * ϕ_res) - width_bias
-    share_end = share_end > ϕ_res ? ϕ_res : share_end
+    share_end = floor(Int, Θ/2π * ϕ_res)
     #my_ind = floor(Int, share_end/2)
     p_share = zeros(ϕ_res)
     p_share[1:share_end] .= 1
