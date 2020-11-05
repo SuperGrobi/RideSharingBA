@@ -35,7 +35,6 @@ println("################### starting multi sim ###################")
 run_multi_track(configs, ϕ_res, p_track_start, smooth_every, kernel_length, "$(n)_low/")
 
 println("################### small b_explicit ###################")
-
 s_b_conf = Config_small(1, 0.1, 0, π, n, 14, 1000, 300)
 small_b = solve_time_evolution(p_0, ϕ, s_b_conf, smooth_every, kernel_length)
 save_sim(small_b, s_b_conf, "$(n)_low/")

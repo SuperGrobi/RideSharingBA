@@ -18,14 +18,14 @@ plot!(b8_high, s8_high_widths, label="8 players, high start")
 
 
 # 16 players
-b16_low, s16_low, _ = load_run("more_players_no_inc_high_res/16_low/")
+b16_low, s16_low, _ = load_run("more_players_no_inc_final/16_low/")
 s16_low_widths = [simple_width(ϕ, p[:,end]) for p in s16_low]
 
-b16_high, s16_high, _ = load_run("more_players_no_inc_high_res/16_high/")
+b16_high, s16_high, _ = load_run("more_players_no_inc_final/16_high/")
 s16_high_widths = [simple_width(ϕ, p[:,end]) for p in s16_high]
 
-#plot!(b16_low, s16_low_widths, label="16 players, low start")
-#plot!(b16_high, s16_high_widths, label="16 players, high start")
+plot!(b16_low, s16_low_widths, label="16 players, low start")
+plot!(b16_high, s16_high_widths, label="16 players, high start")
 
 #=
 # 32 players
