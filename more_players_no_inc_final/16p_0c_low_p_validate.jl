@@ -24,6 +24,6 @@ for i in 12:2:42  # empirical values from data...
 end
 
 
-plot(b16_low, s16_low_widths, label="simulation data")
+plot(b16_low, s16_low_widths, label="simulation data", title="16 players, no inc")
 plot!(b16_low, s16_low_widths .+ offset, label="validation start width", linestyle=:dash, color=:grey)
 plot!(b_validation, sim_widths, label="validated widths")
