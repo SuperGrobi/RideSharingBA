@@ -1,5 +1,6 @@
 using Distributed
 @everywhere include("./ring_np_num.jl")
+@everywhere include("./load_and_process.jl")
 
 ϕ_res = 200
 ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
