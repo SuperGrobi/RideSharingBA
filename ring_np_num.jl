@@ -205,7 +205,6 @@ function Δu_array(ϕ, p_share, conf)
     Δu_values = [i[1] for i in result]
     shared = [i[2] for i in result]
     return Δu_values, shared
-
 end
 
 
