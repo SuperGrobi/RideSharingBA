@@ -1,12 +1,3 @@
 .git
-2_player_full/a*
-2_player_no_inc/a*
-2_player_no_inc_1d/a*
-2_player_full_comparable_scale/a*
-more_players_no_inc/a*
-more_players_high_prob/a*
-more_players_no_inc_clamped/*/a*
-more_players_no_inc_high_res/*/*/a*
-more_players_no_inc_high_res/*/a*
-more_players_no_inc_final/*/a*
+*a*.jld2
 .ipynb_checkpoints/*
