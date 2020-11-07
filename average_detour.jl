@@ -58,6 +58,45 @@ function get_b(n, Θ, c, games, ϕ_res)
 end
 
 
+function get_b_other(n, Θ, c, games, ϕ_res)
+    ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
+
+    # build peak with start at first index and end at angle Θ
+    share_end = floor(Int, Θ/2π * ϕ_res)
+    #my_ind = floor(Int, share_end/2)
+    p_share = zeros(ϕ_res)
+    p_share[1:share_end] .= 1
+
+    my_ind = 1
+
+    realisations_phi_index = sample(1:length(ϕ), (n-1, games))
+    realisations_share = [sample([false,true], Weights([1-p_share[i], p_share[i]])) for i in realisations_phi_index]
+
+    # fill util_share for each realisation
+    matched = 0
+    detours = zeros(games)
+    for (i, ϕ_ind) in enumerate(eachcol(realisations_phi_index))
+        share = realisations_share[:, i]
+        share_config = get_share_config(my_ind, ϕ_ind, ϕ, share)  # get angle index of sharing partner
+        if share_config == 0  # if no one shares with me
+            detours[i] = 0
+        else
+            angle = ϕ[share_config]
+            angle = angle > π ? 2π-angle : angle
+            dist = cos_satz(angle)
+            detours[i] = dist/2
+            matched += 1
+        end
+    end
+
+    mhd = mean(detours)
+    p_match = matched/games
+
+    return (1-p_match*c) / mhd  # this should be b
+end
+
+
+
 function get_crit_b(n, c, games, ϕ)
     detours = []
     angles = []
