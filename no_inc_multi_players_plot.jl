@@ -43,7 +43,7 @@ plot!(b32_low, s32_low_widths, label="32 players, low start", marker=:x)
 plot!(b32_high, s32_high_widths, label="32 players, high start")
 
 
-
+#=
 # 31 players
 b31_low, s31_low, _ = load_run("more_players_no_inc_final/31_low/")
 s31_low_widths = [simple_width(ϕ, p[:,end]) for p in s31_low]
@@ -53,7 +53,7 @@ s31_high_widths = [simple_width(ϕ, p[:,end]) for p in s31_high]
 
 plot!(b31_low, s31_low_widths, label="31 players, low start", marker=:x)
 plot!(b31_high, s31_high_widths, label="31 players, high start")
-
+=#
 
 
 #=
