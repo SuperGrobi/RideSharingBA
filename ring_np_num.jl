@@ -28,7 +28,7 @@ mutable struct Config_small
     steps::Int  # integration steps
 end
 
-
+import Base.print
 function print(x::Config_small)
     println("a: $(x.a)")
     println("b: $(x.b)")
@@ -40,7 +40,6 @@ function print(x::Config_small)
     println("dt: $(x.dt)")
     println("games: $(x.games)")
     println("steps: $(x.steps)")
-
 end
 
 function u_share(ϕ_i, ϕ, conf::Config_small)
