@@ -10,45 +10,6 @@ include("./load_and_process.jl")
 
 pyplot()
 
-mutable struct Config
-    # player parameters
-    b_i::Float64  # positive constant
-    α::Float64  # price factor
-    β::Float64  # detour factor
-    γ::Float64  # inconvenience factor
-
-    # system parameters
-    ϵ::Float64  # discount when sharing
-    p::Float64  # base price per distance
-    r_0::Float64  # radius of ring
-    angle_cutoff::Float64  # angle (rad) above which people are no longer getting matched
-    player_count::Int  # number of players
-
-    # simulation parameters
-    dt::Float64  # timestep
-    games::Int  # games played for each direction
-    steps::Int  # integration steps
-end
-
-import Base.print
-function print(x::Config)
-    println("b_i: $(x.b_i)")
-    println("α: $(x.α)")
-    println("β: $(x.β)")
-    println("γ: $(x.γ)")
-
-    println("system params:")
-    println("ϵ: $(x.ϵ)")
-    println("p: $(x.p)")
-    println("r_0: $(x.r_0)")
-    println("angle_cutoff: $(x.angle_cutoff)")
-    println("player_count: $(x.player_count)")
-    println("sim params:")
-    println("dt: $(x.dt)")
-    println("games: $(x.games)")
-    println("steps: $(x.steps)")
-end
-
 mutable struct Config_small
     # contains rescaled simulation parameters
     #TODO finish struct, rework functions, add new functions
@@ -82,30 +43,6 @@ function print(x::Config_small)
 
 end
 
-
-function u_share(ϕ_i, ϕ, conf::Config)
-    #= calculates utility if user is shared at position ϕ_i with user at position ϕ =#
-    f1 = conf.b_i - conf.α * (1-conf.ϵ) * conf.p * conf.r_0 - conf.γ * conf.r_0
-    if rand([true, false])
-        return f1 - conf.β * conf.r_0 * sqrt(2 - 2cos(ϕ-ϕ_i))
-    else
-        return f1
-    end
-end
-
-
-function u_share_single(conf::Config)
-    #= calculates the utility if user wants to share but does not get matched =#
-    return conf.b_i - conf.α * (1-conf.ϵ) * conf.p * conf.r_0
-end
-
-
-function u_single(conf::Config)
-    #= calculates the utility if user does not want to share =#
-    return conf.b_i - conf.α * conf.p * conf.r_0
-end
-
-
 function u_share(ϕ_i, ϕ, conf::Config_small)
     #= calculates the difference in utility if user is shared at position ϕ_i with user at position ϕ =#
     f1 = conf.a - conf.c
@@ -119,12 +56,14 @@ end
 
 function u_share_single(conf::Config_small)
     #= calculates the difference in utility if user wants to share but does not get matched =#
-    return conf.a
+    return conf.a  # usually 1
 end
+
 
 function cos_satz(Δϕ)
     return sqrt(2-2cos(Δϕ))
 end
+
 
 function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
     # ϕ_i: meine richtung (index)
@@ -235,31 +174,6 @@ function get_share_config(ϕ_i, ϕ_ind, ϕ, share; max_share_angle=2π)
     end
 end
 
-function Δu(my_index, ϕ, p_share, conf::Config)
-    # calculates the difference in utility between sharing and single rides by playing multiple games
-    realisations_phi_index = sample(1:length(ϕ), (conf.player_count-1, conf.games))
-    realisations_share = [sample([false,true], Weights([1-p_share[i], p_share[i]])) for i in realisations_phi_index]
-
-    # fill util_share for each realisation
-    actually_shared = 0
-    util_share = zeros(conf.games)
-    for (i, ϕ_ind) in enumerate(eachcol(realisations_phi_index))
-        share = realisations_share[:, i]
-        share_config = get_share_config(my_index, ϕ_ind, ϕ, share; max_share_angle=conf.angle_cutoff)  # get angle index of sharing partner
-        if share_config == 0  # if no one shares with me
-            util_share[i] = u_share_single(conf)
-        else
-            util_share[i] = u_share(ϕ[my_index], ϕ[share_config], conf)
-            actually_shared += 1
-        end
-    end
-
-    util_share = mean(util_share)
-    util_single = u_single(conf)
-
-    return util_share - util_single, actually_shared/conf.games
-end
-
 
 function Δu(my_index, ϕ, p_share, conf::Config_small)
     # calculates the difference in utility between sharing and single rides by playing multiple games
@@ -285,56 +199,14 @@ function Δu(my_index, ϕ, p_share, conf::Config_small)
     return Δutils, actually_shared/conf.games
 end
 
-"""
-function distributed_games(x, my_index, ϕ, conf::Config_small)
-    ϕ_ind = x[1]
-    share = x[2]
-    share_config = get_share_config(my_index, ϕ_ind, ϕ, share; max_share_angle=conf.angle_cutoff)  # get angle index of sharing partner
-    if share_config == 0  # if no one shares with me
-        return u_share_single(conf), 0.0
-    else
-        return u_share(ϕ[my_index], ϕ[share_config], conf), 1.0
-    end
-
-end
-
-function Δu(my_index, ϕ, p_share, conf::Config_small)
-    # calculates the difference in utility between sharing and single rides by playing multiple games
-    realisations_phi_index = sample(1:length(ϕ), (conf.player_count-1, conf.games))
-    realisations_share = [sample([false,true], Weights([1-p_share[i], p_share[i]])) for i in realisations_phi_index]
-
-    # fill util_share for each realisation
-    actually_shared = 0
-    Δutils = zeros(conf.games)
-
-    games_iterator = zip(eachcol(realisations_phi_index), eachcol(realisations_share))
-
-    Δutils = pmap(x -> distributed_games(x, my_index, ϕ, conf), games_iterator)
-
-    Δutils_end = mean([x[1] for x in Δutils])
-    actually_shared = sum([x[2] for x in Δutils])
-
-    return Δutils_end, actually_shared/conf.games
-end
-"""
 
 function Δu_array(ϕ, p_share, conf)
     result = pmap(x->Δu(x, ϕ, p_share, conf), 1:length(ϕ))
     Δu_values = [i[1] for i in result]
     shared = [i[2] for i in result]
-    """
-    Δu_values = zeros(length(ϕ))
-    shared = zeros(length(ϕ))
-    for i in 1:length(ϕ)
-        result = Δu(i, ϕ, p_share, conf)
-        Δu_values[i] = result[1]
-        shared[i] = result[2]
-    end
-    """
     return Δu_values, shared
 
 end
-
 
 
 function replicator_step(p_share, ϕ::LinRange, conf)
@@ -410,13 +282,6 @@ function solve_time_evolution(p_0, ϕ, conf, smooth_every=10, kernel_length=21)
     end
     println("Simulation completed!")
     return save_array, actual_dist_array
-end
-
-
-function save_sim(p_end, config::Config, folder)
-    result = [p_end; config]
-    save_string = folder * "alpha=$(config.α)_beta=$(config.β)_gamma=$(config.γ)_epsilon=$(config.ϵ)_p=$(config.p)_r0=$(config.r_0)_angCut=$(config.angle_cutoff)_Pc=$(config.player_count)_dt=$(config.dt)_games=$(config.games)_steps=$(config.steps).jld2"
-    @save save_string result
 end
 
 
