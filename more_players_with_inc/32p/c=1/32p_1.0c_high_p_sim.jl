@@ -4,6 +4,7 @@ using Distributed
 
 @everywhere begin
     n = 32
+    c = 1.0
     ϕ_res = 200
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
 
@@ -12,8 +13,8 @@ using Distributed
 end
 
 configs = []
-for b in 11.2:0.2:13.5
-    push!(configs, Config_small(1, b, 0, π, n, 6/b, 1000, 300))
+for b in 0.1:0.4:5
+    push!(configs, Config_small(1, b, c, π, n, 6/b, 1000, 300))
 end
 
 smooth_every = 10

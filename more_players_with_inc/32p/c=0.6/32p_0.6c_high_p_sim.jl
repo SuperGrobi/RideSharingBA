@@ -3,7 +3,7 @@ using Distributed
 
 
 @everywhere begin
-    n = 16
+    n = 32
     c = 0.6
     ϕ_res = 200
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
@@ -13,7 +13,7 @@ using Distributed
 end
 
 configs = []
-for b in 2.4:0.1:2.8
+for b in 4:0.4:9
     push!(configs, Config_small(1, b, c, π, n, 6/b, 1000, 300))
 end
 

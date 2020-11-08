@@ -4,6 +4,7 @@ using Distributed
 
 @everywhere begin
     n = 32
+    c = 1.0
     ϕ_res = 200
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
 
@@ -12,8 +13,8 @@ using Distributed
 end
 
 configs = []
-for b in 5:0.2:8.8
-    push!(configs, Config_small(1, b, 0, π, n, 6/b, 1000, 300))
+for b in 0.4:0.4:6
+    push!(configs, Config_small(1, b, c, π, n, 6/b, 1000, 300))
 end
 
 smooth_every = 10
@@ -36,15 +37,6 @@ run_multi_track(configs, ϕ_res, p_track_start, smooth_every, kernel_length, "$(
 
 println("################### small b_explicit ###################")
 
-s_b_conf = Config_small(1, 0.1, 0, π, n, 14, 1000, 300)
+s_b_conf = Config_small(1, 0.1, c, π, n, 14, 1000, 300)
 small_b = solve_time_evolution(p_0, ϕ, s_b_conf, smooth_every, kernel_length)
 save_sim(small_b, s_b_conf, "$(n)_low/")
-
-
-
-b = 10
-
-conf = Config_small(1, b, 0, π, n, 6/b, 10000, 100)
-
-
-p_end = validate(3.67, 0.8, ϕ, conf, smooth_every, kernel_length, "")
