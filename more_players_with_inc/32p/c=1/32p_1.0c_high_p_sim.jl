@@ -1,5 +1,5 @@
 using Distributed
-@everywhere include("../ring_np_num.jl")
+@everywhere include("../../../ring_np_num.jl")
 
 
 @everywhere begin
