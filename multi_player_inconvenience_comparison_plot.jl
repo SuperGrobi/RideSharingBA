@@ -1,4 +1,5 @@
 using Plots
+gr()
 include("ring_np_num.jl")
 include("average_detour.jl")
 include("load_and_process.jl")
@@ -18,6 +19,7 @@ begin
     b8_high, s8_high, _ = load_run("more_players_no_inc_final/8_high/")
     s8_high_widths = [simple_width(ϕ, p[:,end]) for p in s8_high]
 
+
     # 8 players, inconvenience 0.2
     b8_c02_low, s8_c02_low, _ = load_run("more_players_with_inc/8p/c=0.2/8_low/")
     s8_c02_low_widths = [simple_width(ϕ, p[:,end]) for p in s8_c02_low]
@@ -32,8 +34,6 @@ begin
 
     b8_c06_high, s8_c06_high, _ = load_run("more_players_with_inc/8p/c=0.6/8_high/")
     s8_c06_high_widths = [simple_width(ϕ, p[:,end]) for p in s8_c06_high]
-
-
 
 
     # 8 players, inconvenience 1
@@ -70,6 +70,23 @@ begin
     s16_high_widths = [simple_width(ϕ, p[:,end]) for p in s16_high]
 
 
+    # 16 players, inconvenience 0.2
+    b16_c02_low, s16_c02_low, _ = load_run("more_players_with_inc/16p/c=0.2/16_low/")
+    s16_c02_low_widths = [simple_width(ϕ, p[:,end]) for p in s16_c02_low]
+
+    b16_c02_high, s16_c02_high, _ = load_run("more_players_with_inc/16p/c=0.2/16_high/")
+    s16_c02_high_widths = [simple_width(ϕ, p[:,end]) for p in s16_c02_high]
+
+
+    # 16 players, inconvenience 0.6
+    b16_c06_low, s16_c06_low, _ = load_run("more_players_with_inc/16p/c=0.6/16_low/")
+    s16_c06_low_widths = [simple_width(ϕ, p[:,end]) for p in s16_c06_low]
+
+    b16_c06_high, s16_c06_high, _ = load_run("more_players_with_inc/16p/c=0.6/16_high/")
+    s16_c06_high_widths = [simple_width(ϕ, p[:,end]) for p in s16_c06_high]
+
+
+
     # 16 players, inconvenience 1
     b16_c1_low, s16_c1_low, _ = load_run("more_players_with_inc/16p/c=1/16_low/")
     s16_c1_low_widths = [simple_width(ϕ, p[:,end]) for p in s16_c1_low]
@@ -80,6 +97,14 @@ begin
 
     p2 = plot(b16_low, s16_low_widths, label="low start, c=0")
     plot!(p2, b16_high, s16_high_widths, label="high start, c=0")
+
+
+    plot!(p2, b16_c02_low, s16_c02_low_widths, label="low start, c=0.2")
+    plot!(p2, b16_c02_high, s16_c02_high_widths, label="high start, c=0.2")
+
+
+    plot!(p2, b16_c06_low, s16_c06_low_widths, label="low start, c=0.6")
+    plot!(p2, b16_c06_high, s16_c06_high_widths, label="high start, c=0.6")
 
 
     plot!(p2, b16_c1_low, s16_c1_low_widths, label="low start, c=1")
