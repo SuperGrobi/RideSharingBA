@@ -122,6 +122,22 @@ begin
     s32_high_widths = [simple_width(ϕ, p[:,end]) for p in s32_high]
 
 
+    # 32 players, inconvenience 0.2
+    b32_c02_low, s32_c02_low, _ = load_run("more_players_with_inc/32p/c=0.2/32_low/")
+    s32_c02_low_widths = [simple_width(ϕ, p[:,end]) for p in s32_c02_low]
+
+    b32_c02_high, s32_c02_high, _ = load_run("more_players_with_inc/32p/c=0.2/32_high/")
+    s32_c02_high_widths = [simple_width(ϕ, p[:,end]) for p in s32_c02_high]
+
+
+    # 32 players, inconvenience 0.6
+    b32_c06_low, s32_c06_low, _ = load_run("more_players_with_inc/32p/c=0.6/32_low/")
+    s32_c06_low_widths = [simple_width(ϕ, p[:,end]) for p in s32_c06_low]
+
+    b32_c06_high, s32_c06_high, _ = load_run("more_players_with_inc/32p/c=0.6/32_high/")
+    s32_c06_high_widths = [simple_width(ϕ, p[:,end]) for p in s32_c06_high]
+
+
     # 32 players, inconvenience 1
     b32_c1_low, s32_c1_low, _ = load_run("more_players_with_inc/32p/c=1/32_low/")
     s32_c1_low_widths = [simple_width(ϕ, p[:,end]) for p in s32_c1_low]
@@ -133,6 +149,11 @@ begin
     p3 = plot(b32_low, s32_low_widths, label="low start, c=0")
     plot!(p3, b32_high, s32_high_widths, label="high start, c=0")
 
+    plot!(p3, b32_c02_low, s32_c02_low_widths, label="low start, c=02")
+    plot!(p3, b32_c02_high, s32_c02_high_widths, label="high start, c=02")
+
+    plot!(p3, b32_c06_low, s32_c06_low_widths, label="low start, c=06")
+    plot!(p3, b32_c06_high, s32_c06_high_widths, label="high start, c=06")
 
     plot!(p3, b32_c1_low, s32_c1_low_widths, label="low start, c=1")
     plot!(p3, b32_c1_high, s32_c1_high_widths, label="high start, c=1")

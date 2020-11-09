@@ -13,7 +13,7 @@ using Distributed
 end
 
 configs = []
-for b in 6:0.4:10
+for b in 5:0.2:10
     push!(configs, Config_small(1, b, c, π, n, 6/b, 1000, 300))
 end
 
