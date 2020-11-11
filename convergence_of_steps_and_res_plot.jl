@@ -1,6 +1,8 @@
 using Plots
 using Distributed
 
+# uncomment this if you want simulations.
+#=
 @everywhere begin
     n = 16
     conf_low = Config_small(1, 6.5, 0, π, n, 1, 1000, 200)  # low games per destination
@@ -30,7 +32,7 @@ save_sim(p_end_high_games, conf_high, "plotting_stuff/")
 
 p_end_high_res_high_games = solve_time_evolution(p_high_res, ϕ_high, conf_high, 10, 41)
 save_sim(p_end_high_res_high_games, conf_high, "plotting_stuff/")
-
+=#
 
 
 p_end_default = load_sim("plotting_stuff/convergence_default.jld2")[1][1]
@@ -43,11 +45,11 @@ p2 = heatmap(p_end_high_res, title = "400 nodes, 1000 games")
 p3 = heatmap(p_end_high_games, title = "200 nodes, 10000 games")
 p4 = heatmap(p_end_high_res_high_games, title = "400 nodes, 10000 games")
 
-p5 = plot(ϕ_low, p_end_default[:,end], label = "200 nodes, 1000 games")
+p5 = plot(ϕ_low, circshift(p_end_default[:,end], -3), label = "200 nodes, 1000 games")
 plot!(p5, ϕ_high, p_end_high_res[:,end], label = "400 nodes, 1000 games")
 plot!(p5, ϕ_low, p_end_high_games[:,end], label = "200 nodes, 10000 games")
 plot!(p5, ϕ_high, p_end_high_res_high_games[:,end], label = "400 nodes, 10000 games")
-
+plot!(p5, title="end distributions")
 
 line1 = plot(p1, p2, p3, p4, layout = (1,4))
-plot(line1, p5, layout=(2,1))
+plot(line1, p5, layout=(2,1), size = (1500, 700))
