@@ -40,6 +40,30 @@ plot!(p2, xlim=(4, :auto), title="16 players")
 
 
 
+# 31 players
+b31_low, s31_low, _ = load_run("more_players_no_inc_final/31_low/")
+s31_low_widths = [simple_width(ϕ, p[:,end]) for p in s31_low]
+
+b31_high, s31_high, _ = load_run("more_players_no_inc_final/31_high/")
+s31_high_widths = [simple_width(ϕ, p[:,end]) for p in s31_high]
+pushfirst!(b31_high, 1)
+pushfirst!(s31_high_widths, 2π)
+
+
+b31_theo = get_b.(31, Θ, 0, 10000, 200);
+
+
+p4 = plot(b31_low, s31_low_widths, label="low start")
+plot!(p4, b31_high, s31_high_widths, label="high start")
+plot!(p4, b31_theo, Θ, label="theory")
+plot!(p4, xlim=(6, :auto), title="31 players")
+
+
+
+
+
+
+
 # 32 players
 b32_low, s32_low, _ = load_run("more_players_no_inc_final/32_low/")
 s32_low_widths = [simple_width(ϕ, p[:,end]) for p in s32_low]
@@ -59,5 +83,5 @@ plot!(p3, b32_theo, Θ, label="theory")
 plot!(p3, xlim=(6, :auto), title="32 players")
 
 
-plot(p1, p2, p3, layout=(1,3))
-plot!(ylabel="theta", xlabel="b", size=(1000, 400))
+plot(p1, p2, p3, p4, layout=(1,4))
+plot!(ylabel="theta", xlabel="b", size=(1300, 400))
