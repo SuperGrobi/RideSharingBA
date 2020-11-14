@@ -1,4 +1,4 @@
-function load_run(dir)
+function load_run(dir, shift=true)
     filenames = readdir(dir)
     filenames = [file for file in filenames if file[end] == '2']
 
@@ -30,7 +30,9 @@ function load_run(dir)
     match_array = match_array[sorted]
     configs = configs[sorted]
 
-    share_array = shift_end_to_beginning.(share_array);
+    if shift
+        share_array = shift_end_to_beginning.(share_array);
+    end
 
     return b_array, share_array, configs, player_array, match_array
     end
