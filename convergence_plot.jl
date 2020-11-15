@@ -11,17 +11,21 @@ f1 = heatmap(p_0[1][1], title = "two players", cbar=false,
     framestyle=:box,
     ylabel="direction",
     xticks=(0:50:100, latexstring.(0:50:100)),
-    yticks = (LinRange(0,200,5), [L"0", L"\frac{\pi}{2}", L"\pi", L"\frac{3\pi}{2}", L"2\pi"]))
+    yticks = (LinRange(0,200,5), [L"0", L"\frac{\pi}{2}", L"\pi", L"\frac{3\pi}{2}", L"2\pi"]),
+    right_margin=8mm)
 
 f2 = heatmap(p_1[1][1], title = "16 players, without smoothing", cbar=false,
     framestyle=:box,
     xticks=(0:50:200, latexstring.(0:50:200)),
-    yticks=:none)
+    yticks=:none,
+    right_margin=8mm)
 f3 = heatmap(p_2[1][1], title="16 players, with smoothing",
     framestyle=:box,
     xticks=(0:50:200, latexstring.(0:50:200)),
-    yticks=:none)
+    yticks=:none,
+    colorbar_title=L"p_{share}",
+    right_margin=30mm)
 
 
-fig = plot(f1, f2,f3, layout=(1,3), xlabel="timesteps", size=(1200, 400), right_margin=15mm, dpi=500)
+fig = plot(f1, f2,f3, layout=(1,3), xlabel="timesteps", size=(1200, 400), dpi=500)
 savefig(fig, "../writing/convergence_problem_multi_player.png")
