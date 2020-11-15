@@ -29,7 +29,7 @@ for i in [7,8,9]
 end
 
 
-p1 = plot(all_images..., layout=(3,3))
+p1 = plot(all_images..., layout=(3,3), left_margin=10mm)
 
 image = collect(LinRange(0,1,1024))
 image = hcat([image for i in 1:10]...)
@@ -42,7 +42,9 @@ c1 = heatmap(image,
     xticks=:none,
     yticks=(collect(LinRange(1,1024,6)), latexstring.(LinRange(0,1,6))),
     ytick_direction=:out,
-    left_margin=20mm)
+    left_margin=20mm,
+    ylabel=L"p_{share}",
+    right_margin=10mm)
 
 title = plot(title = "symmetry breaking demonstration", grid = false, showaxis = false, bottom_margin = -10px)
 layout_upper = @layout [a{0.01h}; [c b{0.025w}]]
@@ -55,6 +57,8 @@ p3 = plot(ϕ, s_show[:, [1, 5, 10, end]],
     labels=[L"t=0" L"t=5" L"t=10" L"t=100"],
     c=[blue6 blue4 blue3 blue1],
     lw=[1 1 1 3],
+    xlabel="direction",
+    ylabel=L"p_{share}",
     xlims=(0, 2π),
     ylims=(0,1.001),
     xticks=(0:π/2:2π, [L"0", L"\frac{\pi}{2}", L"\pi", L"\frac{3\pi}{2}", L"2\pi"]),
