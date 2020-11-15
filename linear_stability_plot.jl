@@ -1,3 +1,7 @@
+using Plots
+using LaTeXStrings
+include("colors.jl")
+
 include("ring_2p_ana.jl")
 pyplot()
 # change these
@@ -39,6 +43,19 @@ function λ_ana(k)
 end
 
 println(fp)
-scatter(0:10, λ[1:end], yerr=λ_err, label="numeric", ms=10)
-scatter!(0:10, λ_ana.(0:10), label="analytic")
-title!("linear stability of the two player case")
+fig = vline([0], color=:black, label="")
+hline!(fig, [0], color=:black, label="")
+scatter!(fig, 0:10, λ[1:end], label="numeric",marker=:x, ms=13, color=blue4)
+scatter!(fig, 0:10, λ_ana.(0:10), label="analytic",
+    ms=6,
+    framestyle=:box,
+    color=yellow5,
+    xlabel=L"perturbation wave number $k$",
+    ylabel=L"growth factor $\lambda_k$",
+    xlims=(-0.2, 7.2),
+    ylims=(-0.3,0.06),
+    yticks=([-0.3:0.05:0; 0.05], latexstring.([-0.3:0.05:0; 0.05])),
+    xticks=(0:7, latexstring.(0:7)),
+    legend=:bottomright)
+title!(fig, "linear stability of the two player case")
+savefig(fig, "../writing/lin_stab.pdf")
