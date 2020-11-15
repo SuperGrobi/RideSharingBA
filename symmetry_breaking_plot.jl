@@ -15,7 +15,7 @@ run_multi_sims(conf, 200, 0.1, 10000, 41, "plotting_stuff/breaking_2p/")
 
 b_array, s_array, _ = load_run("plotting_stuff/breaking_2p/", false)
 
-all_images = heatmap.(s_array, colorbar=false, framestyle=:box, axis=false)
+all_images = heatmap.(s_array, colorbar=false, framestyle=:box, xticks=:none, yticks=:none)
 for i in [1,4,7]
     yticks!(all_images[i], 0:100:200, latexstring.([L"0", L"\pi", L"2\pi"]))
     ylabel!(all_images[i], "direction")
@@ -31,16 +31,22 @@ end
 
 p1 = plot(all_images..., layout=(3,3))
 
-c1 = scatter([0,0], [0,1], zcolor=[0,1], clims=(0,1),
-             xlims=(1,10), axis=false, label="", grid=false)
+image = collect(LinRange(0,1,1024))
+image = hcat([image for i in 1:10]...)
 
 
-# savefig(p1, "test.png")
+c1 = heatmap(image,
+    cbar=false,
+    ymirror=true,
+    framestyle=:box,
+    xticks=:none,
+    yticks=(collect(LinRange(1,1024,6)), latexstring.(LinRange(0,1,6))),
+    ytick_direction=:out,
+    left_margin=20mm)
 
-layout_upper = @layout [grid(1,1) b{0.8w}]
-p_upper = plot(layout=layout_upper)
-plot!(p_upper, subplot=2, rand(19), left_margin=-50mm, right_margin=100mm)
-plot!(p_upper, subplot=1, rand(19), left_margin=50mm)
+title = plot(title = "symmetry breaking demonstration", grid = false, showaxis = false, bottom_margin = -10px)
+layout_upper = @layout [a{0.01h}; [c b{0.025w}]]
+p_upper = plot(title, p1, c1, layout=layout_upper)
 
 s_show = s_array[6]
 
@@ -53,12 +59,12 @@ p3 = plot(ϕ, s_show[:, [1, 5, 10, end]],
     ylims=(0,1.001),
     xticks=(0:π/2:2π, [L"0", L"\frac{\pi}{2}", L"\pi", L"\frac{3\pi}{2}", L"2\pi"]),
     yticks=(0:0.25:1, latexstring.(0:0.25:1)),
-    title=L"sage $te$")
+    title="convergence examples",
+    top_margin=20mm)
 
 final_layout = @layout [a{0.7h}; b]
 
-fig_final = plot(p_upper, p3, layout=final_layout)
+fig_final = plot(p_upper, p3, layout=final_layout, size=(1200, 600), dpi=500)
 
-plot(rand(122), color="#111111")
 
 savefig(fig_final, "../writing/simulation_2_player_overview.png")
