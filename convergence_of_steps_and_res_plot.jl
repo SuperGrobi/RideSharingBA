@@ -1,5 +1,6 @@
 using Plots
 using LaTeXStrings
+using Plots.PlotMeasures
 using Distributed
 include("ring_np_num.jl")
 include("colors.jl")
@@ -82,7 +83,7 @@ plot!(p5, ϕ_low, p_end_high_games[:,end], label = "200 nodes, 10000 games",
 plot!(p5, ϕ_high, p_end_high_res_high_games[:,end], label = "400 nodes, 10000 games",
     linewidth=2,
     color=yellow5)
-plot!(p5, title="end distributions",
+plot!(p5, title="equilibrium sharing adoption",
     xlims=(0,2π),
     xticks=(0:π/2:2π, [L"0", L"\frac{\pi}{2}", L"\pi", L"\frac{3\pi}{2}", L"2\pi"]),
     ylims=(0,1.001),
@@ -91,6 +92,7 @@ plot!(p5, title="end distributions",
     ylabel=L"p_{share}")
 
 line1 = plot(p1, p2, p3, p4, layout = (1,4), xlabel="timesteps",
-xticks=(50:50:200, latexstring.(50:50:200)))
+    xticks=(50:50:200, latexstring.(50:50:200)),
+left_margin=10mm)
 fig = plot(line1, p5, layout=(2,1), size = (1500, 700), framestyle=:box, dpi=400)
 savefig(fig, "../writing/convergence_more_res_games.png")
