@@ -53,19 +53,19 @@ for (i, y) in enumerate(eachrow(widths[2:end,:]))
         ms=5,
         marker=:o,
         markerstrokewidth=0.4,
-        label=latexstring("c=$(a_array[i+1,1])"))
+        label=latexstring("a=$(a_array[i+1,1])"))
     if a_array[i+1,1] ∈ [0.2, 0.6]
         plot!(p2, 1 ./ (b_array[1,7:end]/a_array[i+1,1]), y[7:end],
             ms=5,
             marker=:o,
             markerstrokewidth=0.4,
-            label=latexstring("c=$(a_array[i+1,1])"))
+            label=latexstring("a=$(a_array[i+1,1])"))
     else
         plot!(p2, 1 ./ (b_array[1,:]/a_array[i+1,1]), y,
             ms=5,
             marker=:o,
             markerstrokewidth=0.4,
-            label=latexstring("c=$(a_array[i+1,1])"))
+            label=latexstring("a=$(a_array[i+1,1])"))
     end
 end
 
