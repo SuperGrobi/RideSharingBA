@@ -1,3 +1,4 @@
 .git
 *.jld2
 .ipynb_checkpoints/*
+!/plotting_stuff/*/*.jld2
