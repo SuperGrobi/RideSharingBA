@@ -200,6 +200,7 @@ end
 
 
 function Δu_array(ϕ, p_share, conf)
+    # calculates array of Δu for all directions. (distributed!!)
     result = pmap(x->Δu(x, ϕ, p_share, conf), 1:length(ϕ))
     Δu_values = [i[1] for i in result]
     shared = [i[2] for i in result]
@@ -208,6 +209,7 @@ end
 
 
 function replicator_step(p_share, ϕ::LinRange, conf)
+    # performs one replicator_step step on the provided p_share, with parameters from conf.
     result = Δu_array(ϕ, p_share, conf)
     p_new = p_share + conf.dt * p_share .* (1 .- p_share) .* result[1]
     larger = p_new .> 1
@@ -223,6 +225,7 @@ end
 
 
 function develop_p(p_0, ϕ, conf)
+    # time develops sharing probability, only returns last p_0 and percentage of matched/requested shared
     p_t0 = copy(p_0)
     actual_match= zeros(length(p_0))
     for i in 1:conf.steps
@@ -236,9 +239,9 @@ function develop_p(p_0, ϕ, conf)
 end
 
 function convolve(p, kernel_length=21)
-    kernel_length = kernel_length%2==0 ? kernel_length+1 : kernel_length
     """convolves a periodic function with a gaussian kernel
     (maybe constant of some sort would be better?)"""
+    kernel_length = kernel_length%2==0 ? kernel_length+1 : kernel_length
     edge_overlap = kernel_length ÷ 2
     conv_base = [p..., p[1:2edge_overlap]...]
 
@@ -252,6 +255,7 @@ end
 
 
 function solve_time_evolution(p_0, ϕ, conf, smooth_every=10, kernel_length=21)
+    # solves time evolution of single system by performing multiple replicator steps.
     save_array = zeros(length(ϕ), conf.steps+1)
     save_array[:,1] .= p_0
     actual_dist_array = zeros(length(ϕ), conf.steps+1)
@@ -284,13 +288,16 @@ end
 
 
 function save_sim(p_end, config::Config_small, folder)
+    # saves simulation to file
     result = [p_end; config]
-    save_string = folder * "a=$(config.a)_b=$(config.b)_c=$(config.c)_angCut=$(config.angle_cutoff)_Pc=$(config.player_count)_dt=$(config.dt)_games=$(config.games)_steps=$(config.steps).jld2"
+    save_string = folder * "a=$(config.a)_b=$(config.b)_c=$(config.c)_angCut=$(config.angle_cutoff)
+    _Pc=$(config.player_count)_dt=$(config.dt)_games=$(config.games)_steps=$(config.steps).jld2"
     @save save_string result
 end
 
 
 function load_sim(source::String)
+    # loads single simulation from file by name.
     f = jldopen(source, "r")
     return f["result"]
 end
@@ -336,7 +343,8 @@ end
 
 
 function run_multi_track(configs, ϕ_res, p_0::Array, smooth_every, kernel_length, folder)
-    # runs multiple simulations with given start function
+    #= runs multiple simulations with given start function, uses the end of the
+    simulation before as a start for the next. (p_0 = 0.8p + 0.1) =#
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
     for (i,conf) in enumerate(configs)
         println("==========================================")
@@ -356,7 +364,7 @@ end
 
 
 function run_multi_different_start(configs, ϕ_res, p_0::Array, smooth_every, kernel_length, folder)
-    # runs multiple simulations with given start function
+    # runs multiple simulations with a given array of starting p for each.
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
     for (i,conf) in enumerate(configs)
         println("==========================================")
@@ -374,6 +382,7 @@ function run_multi_different_start(configs, ϕ_res, p_0::Array, smooth_every, ke
 end
 
 function plot_result(result)
+    # plots some interesting figures for single result (that is the return value of load_file)
     p_end = result[1]
     config = result[2]
     ϕ_res = size(p_end[1])[1]
@@ -396,6 +405,7 @@ end
 
 
 function plot_polar(ϕ, ϕ_ind, ϕ_i)
+    # plots the sharing constellation. used for debugging the get sharing partner function.
        angles = ϕ[ϕ_ind]
        x = sin.(angles)
        y = cos.(angles)
@@ -414,6 +424,10 @@ function plot_polar(ϕ, ϕ_ind, ϕ_i)
 
 
 function validate(width, offset, ϕ, conf, smooth_every, kernel_length, folder)
+    #= starts simulation with peak that is slightly wider than the peak we saw in another simulation.
+    width: width we saw earlier
+    offset: delta width we want it to be larger (or smaller.)
+    =#
    # offset: how much wider the test start peak should be (angle)
    ϕ_res = length(ϕ)
    p = zeros(ϕ_res)

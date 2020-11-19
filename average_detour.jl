@@ -8,6 +8,10 @@ include("./ring_np_num.jl")
 
 
 function get_b(n, Θ, c, games, ϕ_res)
+    """getting the expected detour inconvenience for a given amount of players,
+    a sharing regime width and inconvenience factor.
+    games: games to play for averaging
+    ϕ_res: resolution of destinations"""
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
 
     # build peak with start at first index and end at angle Θ
@@ -59,6 +63,7 @@ end
 
 
 function get_b_other(n, Θ, c, games, ϕ_res)
+    """different impelentation of getting b, parameters are the same as above"""
     ϕ = LinRange(0,2π, ϕ_res+1)[1:end-1]
 
     # build peak with start at first index and end at angle Θ
@@ -98,6 +103,7 @@ end
 
 
 function get_crit_b(n, c, games, ϕ)
+    """gets critical b. same as functions above with θ=2π"""
     detours = []
     angles = []
     for i in 1:games
